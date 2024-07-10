@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="signup.css">
+</head>
+
+<body>
+    <form name="submit-to-google-sheet">
+        <div class="section">
+            <div class="container">
+                <div class="row full-height justify-content-center">
+                    <div class="col-12 text-center align-self-center py-5">
+                        <div class="section pb-5 pt-5 pt-sm-2 text-center">
+                            <label for="reg-log"></label>
+                            <div class="card-3d-wrap mx-auto">
+                                <div class="card-3d-wrapper">
+                                    <div class="card-back">
+                                        <div class="center-wrap">
+                                            <div class="section text-center">
+                                                <h4 class="mb-4 pb-3">Log In</h4>
+                                                <div class="form-group mt-2">
+                                                    <input type="email" name="email" class="form-style"
+                                                        placeholder="Your Email" id="email" autocomplete="off">
+                                                    <i class="input-icon uil uil-at"></i>
+                                                </div>
+                                                <div class="form-group mt-2">
+                                                    <input type="password" name="password" class="form-style"
+                                                        placeholder="Your Password" id="password" autocomplete="off">
+                                                    <i class="input-icon uil uil-lock-alt"></i>
+                                                </div>
+                                                <button type="submit" class="btn mt-4" id="logIn">Login</button>
+                                                <div>
+                                                    <label class="mb-0 mt-4 text-center" id="forgetpass"><a
+                                                            class="link">Forgot your
+                                                            password?</a></label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVMhk4-La8nK63C6rsphn16CPWIrmFbmA",
+            authDomain: "final-project-8c053.firebaseapp.com",
+            projectId: "final-project-8c053",
+            storageBucket: "final-project-8c053.appspot.com",
+            messagingSenderId: "881972436006",
+            appId: "1:881972436006:web:c1df7ce089a267118edae7"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
+
+        let forgetpass = document.getElementById('forgetpass');
+        let email = document.getElementById('email');
+
+        logIn.addEventListener("click", (e) => {
+            event.preventDefault();
+            var email = document.getElementById('email').value;
+            var password = document.getElementById('password').value;
+            const auth = getAuth();
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    alert("User LoggedIn!")
+                    const user = userCredential.user;
+                    localStorage.setItem('loggedInUserId', user.uid);
+                    window.location.replace("index.html");
+
+                }).catch((error) => {
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    alert(errorMessage);
+                });
+        })
+
+        let forgotpassword = () => {
+            sendPasswordResetEmail(auth, email.value)
+                .then(() => {
+                    alert("reset email sent");
+                })
+                .catch((error) => {
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    alert(errorMessage);
+                });
+        }
+        forgetpass.addEventListener('click', forgotpassword);
+    </script>
+</body>
+
+</html>

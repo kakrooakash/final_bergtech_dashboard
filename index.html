@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+    <link rel="stylesheet" href="homepage.css">
+    <script src="https://kit.fontawesome.com/bdedc8c31a.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <header>
+        <img src="Images/berg.png" alt="Logo">
+        <nav>
+            <ul>
+                <!-- <div id="timer" class="timer"></div>
+                <button onclick="startTimer()" hidden>Login</button> -->
+                <p id="startTime"></p>
+                <p id="endTime"></p>
+                <li><a href="#">Home</a></li>
+                <li><a href="#">Updates</a></li>
+                <li><a href="#">Faq</a></li>
+                <button id="sign-out" class="signout">Sign Out</button>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="form-column">
+            <div class="twocontainer">
+                <div id="profile-card">
+                    <h2>Employee Profile</h2>
+                    <div>Username: <span id="loggedUserName" name="loggedUserName"></span></div>
+                    <div>Emailid: <span id="loggedEmailId" name="loggedEmailId"></span></div>
+                    <div>Employeeid: <span id="loggedEmployeeId" name="loggedEmployeeId"></span></div>
+                    <div>Process: <span id="loggedProcess" name="loggedProcess"></span></div>
+                    <br>
+                </div>
+                <div id="activity-card">
+                    <form id="myForm" name="submit-to-google-sheet" class="myform">
+                        <label for="activity">Select you activity:</label>
+                        <select type="dropdown" name="activity" id="activity" class="form-control"
+                            placeholder="Activity" required>
+                            <option value="Production">Production</option>
+                            <option value="Break">Tea Break</option>
+                            <option value="Break">Bio Break</option>
+                            <option value="Break">Lunch Break</option>
+                            <option value="Production">Training</option>
+                        </select>
+                        <div class="buttons">
+                            <button id="startButton" class="buttontimmer">Start</button>
+                            <button id="endButton" class="buttontimmer" onclick="setCurrentDate()">End</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="output-column">
+            <!-- <i class="fa-solid fa-arrows-rotate"></i> -->
+            <h2>Employee Productivity Dashboard <button onclick="pieChart()" class="refresh-btn"><i
+                        class="fa-solid fa-arrows-rotate"></i></button></h2>
+            <ul id="activityData" hidden></ul>
+            <input type="hidden" id="currentDate" name="currentDate">
+            <!-- <input type="hidden" id="startTime" name="startTime">
+            <input type="hidden" id="endTime" name="endTime"> -->
+            <input type="hidden" id="timeDifference" name="timeDifference">
+            <input type="hidden" id="id" name="id">
+            <input type="hidden" id="name" name="name">
+            <input type="hidden" id="process" name="process">
+            <div id="graphical-data">
+                <div class="chart">
+                    <canvas id="myChart" class="myChart"></canvas>
+                </div>
+                <div class="graph-data">
+                    <div>Productivity: <span id="prodToday" name="prodToday"></span> Hrs</div>
+                    <div>Break: <span id="breakToday" name="breakToday"></span> Hrs</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="currentTime.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import { getFirestore, getDoc, doc, setDoc, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDVMhk4-La8nK63C6rsphn16CPWIrmFbmA",
+        authDomain: "final-project-8c053.firebaseapp.com",
+        projectId: "final-project-8c053",
+        storageBucket: "final-project-8c053.appspot.com",
+        messagingSenderId: "881972436006",
+        appId: "1:881972436006:web:c1df7ce089a267118edae7"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getFirestore(app);
+
+    let startTime;
+    let endTime;
+
+    let productionTotal = 0;
+    let breakTotal = 0;
+
+    onAuthStateChanged(auth, (user) => {
+        const loggedInUserId = localStorage.getItem('loggedInUserId');
+        if (loggedInUserId) {
+            const docRef = doc(db, "users", loggedInUserId);
+            getDoc(docRef)
+                .then((docsnap) => {
+                    if (docsnap.exists()) {
+                        const userData = docsnap.data();
+                        document.getElementById('loggedUserName').innerText = userData.username;
+                        document.getElementById('loggedEmailId').innerText = userData.email;
+                        document.getElementById('loggedEmployeeId').innerText = userData.employeeid;
+                        document.getElementById('loggedProcess').innerText = userData.process;
+                    }
+                    else {
+                        console.log("No document found");
+                    }
+                })
+        }
+    })
+
+    document.getElementById('sign-out').addEventListener('click', () => {
+        auth.signOut().then(() => {
+            console.log('User signed out successfully.');
+            window.location.replace("signup.html");
+        }).catch((error) => {
+            console.error('Sign out error:', error);
+        });
+    });
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM fully loaded and parsed');
+
+        document.getElementById('startButton').addEventListener('click', (event) => {
+            event.preventDefault();
+            startTime = new Date();
+            startTime = formatTime(startTime);
+            alert(`Start Time: ${startTime}`);
+        });
+
+        document.getElementById('endButton').addEventListener('click', (event) => {
+            event.preventDefault();
+            endTime = new Date();
+            endTime = formatTime(endTime);
+            alert(`End Time: ${endTime}`);
+            if (startTime) {
+                const timeDiff = calculateTimeDifference(startTime, endTime);
+                alert(`Time Difference: ${timeDiff}`);
+                sendTimeToFirebase(startTime, endTime, timeDiff);
+            } else {
+                console.error('Start time is not set');
+            }
+        });
+    });
+
+    function calculateTimeDifference(start, end) {
+        const startParts = start.split(':');
+        const endParts = end.split(':');
+
+        const startHours = parseInt(startParts[0], 10);
+        const startMinutes = parseInt(startParts[1], 10);
+        const startSeconds = parseInt(startParts[2], 10);
+
+        const endHours = parseInt(endParts[0], 10);
+        const endMinutes = parseInt(endParts[1], 10);
+        const endSeconds = parseInt(endParts[2], 10);
+
+        let minutesDiff = endMinutes - startMinutes;
+        let secondsDiff = endSeconds - startSeconds;
+
+        if (secondsDiff < 0) {
+            secondsDiff += 60;
+            minutesDiff--;
+        }
+
+        if (minutesDiff < 0) {
+            minutesDiff += 60;
+        }
+
+        return `${minutesDiff}:${String(secondsDiff).padStart(2, '0')}`
+    }
+
+    function formatTime(date) {
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        return `${hours}:${minutes}:${seconds}`;
+    }
+
+
+
+    // document.addEventListener('DOMContentLoaded', (event) => {
+    //     const loggedInUserId = localStorage.getItem('loggedInUserId');
+    //     const colRef = collection(db, "EmployeeActivity", loggedInUserId, "activity");
+    //     getDocs(colRef)
+    //         .then((querySnapshot) => {
+    //             const ul = document.getElementById("activityData");
+    //             querySnapshot.forEach((doc) => {
+    //                 const activityData = doc.data();
+    //                 const activity = activityData.activity;
+    //                 const difference = activityData.difference;
+    //                 // console.log(activity, difference);
+    //                 if (activity == "Production") {
+    //                     productionTotal += parseInt(difference, 10);
+    //                 }
+    //                 if (activity == "Break") {
+    //                     breakTotal += parseInt(difference, 10);
+    //                 }
+    //                 const li = document.createElement("li");
+    //                 li.innerText = `${activity} : ${parseInt(difference, 10)} min`;
+    //                 li.id = doc.id;
+    //                 ul.appendChild(li);
+
+    //             });
+    //             productionTotal = productionTotal / 60;
+    //             breakTotal = breakTotal / 60;
+    //             prodToday.innerText = parseInt(productionTotal, 10);
+    //             breakToday.innerText = parseInt(breakTotal, 10);
+    //         })
+    //         .catch((error) => {
+    //             console.error("Error getting documents: ", error);
+    //         });
+    // });
+
+    // subcollection
+    async function sendTimeToFirebase(start, end, timeDiff) {
+        event.preventDefault();
+        const activity = document.getElementById("activity").value;
+        const date = document.getElementById("currentDate").value;
+        const loggedInUserId = localStorage.getItem('loggedInUserId');
+        const name = document.getElementById('loggedUserName');
+        console.log("Hiii" + start, end);
+        console.log(date);
+        console.log(timeDiff);
+        try {
+            const docRef = collection(db, "EmployeeActivity", loggedInUserId, "activity");
+            // Set data
+            await addDoc(docRef, {
+                date: date,
+                activity: activity,
+                uid: loggedInUserId,
+                difference: timeDiff,
+                startTime: start,
+                EndTime: end,
+            });
+            alert("Data sent to database!");
+        } catch (e) {
+            console.error("Error writing document: ", e);
+        }
+    }
+</script>
+
+<script>
+
+    function setCurrentDate() {
+        var now = new Date();
+        var year = now.getFullYear();
+        var month = String(now.getMonth() + 1).padStart(2, '0');
+        var day = String(now.getDate()).padStart(2, '0');
+        var formattedDate = year + '-' + month + '-' + day;
+        document.getElementById('currentDate').value = formattedDate;
+    }
+
+    function getDetails() {
+        const getId = document.getElementById('loggedEmployeeId').innerText;
+        const getName = document.getElementById('loggedUserName').innerText;
+        const getProcess = document.getElementById('loggedProcess').innerText;
+        document.getElementById('id').value = getId;
+        document.getElementById('name').value = getName;
+        document.getElementById('process').value = getProcess;
+    }
+    function pieChart() {
+        let x = document.getElementById('prodToday').innerText;
+        let y = document.getElementById('breakToday').innerText;
+        x = (x / 9) * 100;
+        y = (y / 9) * 100;
+        const xValues = ["Productivity", "Break"];
+        const yValues = [35, 65];
+        const barColors = [
+            "#6F40A1",
+            "#50E4E4",
+        ];
+
+        new Chart("myChart", {
+            type: "pie",
+            data: {
+                labels: xValues,
+                datasets: [{
+                    backgroundColor: barColors,
+                    data: yValues
+                }]
+            },
+            options: {
+                title: {
+                    display: true,
+                    text: "Productivity and Break"
+                }
+            }
+        });
+    }
+
+</script>
+
+</html>
