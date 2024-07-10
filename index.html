@@ -16,6 +16,7 @@
             <ul>
                 <!-- <div id="timer" class="timer"></div>
                 <button onclick="startTimer()" hidden>Login</button> -->
+                <p id="Todaydate"></p>
                 <p id="startTime"></p>
                 <p id="endTime"></p>
                 <li><a href="#">Home</a></li>
@@ -57,13 +58,10 @@
             </div>
         </div>
         <div class="output-column">
-            <!-- <i class="fa-solid fa-arrows-rotate"></i> -->
             <h2>Employee Productivity Dashboard <button onclick="pieChart()" class="refresh-btn"><i
                         class="fa-solid fa-arrows-rotate"></i></button></h2>
             <ul id="activityData" hidden></ul>
             <input type="hidden" id="currentDate" name="currentDate">
-            <!-- <input type="hidden" id="startTime" name="startTime">
-            <input type="hidden" id="endTime" name="endTime"> -->
             <input type="hidden" id="timeDifference" name="timeDifference">
             <input type="hidden" id="id" name="id">
             <input type="hidden" id="name" name="name">
@@ -128,6 +126,7 @@
                 })
         }
     })
+
 
     document.getElementById('sign-out').addEventListener('click', () => {
         auth.signOut().then(() => {
@@ -200,38 +199,50 @@
 
 
 
-    // document.addEventListener('DOMContentLoaded', (event) => {
-    //     const loggedInUserId = localStorage.getItem('loggedInUserId');
-    //     const colRef = collection(db, "EmployeeActivity", loggedInUserId, "activity");
-    //     getDocs(colRef)
-    //         .then((querySnapshot) => {
-    //             const ul = document.getElementById("activityData");
-    //             querySnapshot.forEach((doc) => {
-    //                 const activityData = doc.data();
-    //                 const activity = activityData.activity;
-    //                 const difference = activityData.difference;
-    //                 // console.log(activity, difference);
-    //                 if (activity == "Production") {
-    //                     productionTotal += parseInt(difference, 10);
-    //                 }
-    //                 if (activity == "Break") {
-    //                     breakTotal += parseInt(difference, 10);
-    //                 }
-    //                 const li = document.createElement("li");
-    //                 li.innerText = `${activity} : ${parseInt(difference, 10)} min`;
-    //                 li.id = doc.id;
-    //                 ul.appendChild(li);
-
-    //             });
-    //             productionTotal = productionTotal / 60;
-    //             breakTotal = breakTotal / 60;
-    //             prodToday.innerText = parseInt(productionTotal, 10);
-    //             breakToday.innerText = parseInt(breakTotal, 10);
-    //         })
-    //         .catch((error) => {
-    //             console.error("Error getting documents: ", error);
-    //         });
-    // });
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const loggedInUserId = localStorage.getItem('loggedInUserId');
+        const colRef = collection(db, "EmployeeActivity", loggedInUserId, "activity");
+        getDocs(colRef)
+            .then((querySnapshot) => {
+                const ul = document.getElementById("activityData");
+                querySnapshot.forEach((doc) => {
+                    const activityData = doc.data();
+                    const activity = activityData.activity;
+                    const difference = activityData.difference;
+                    const date = activityData.date;
+                    console.log(activity, difference, date);
+                    var now = new Date();
+                    var year = now.getFullYear();
+                    var month = String(now.getMonth() + 1).padStart(2, '0');
+                    var day = String(now.getDate()).padStart(2, '0');
+                    var formattedDate = year + '-' + month + '-' + day;
+                    console.log(formattedDate);
+                    if (formattedDate == date) {
+                        if (activity == "Production") {
+                            productionTotal += parseInt(difference, 10);
+                        }
+                        if (activity == "Break") {
+                            breakTotal += parseInt(difference, 10);
+                        }
+                        const li = document.createElement("li");
+                        li.innerText = `${activity} : ${parseInt(difference, 10)} min`;
+                        li.id = doc.id;
+                        ul.appendChild(li);
+                    }
+                    else {
+                        console.log("No data found!");
+                    }
+                });
+                productionTotal = productionTotal / 60;
+                breakTotal = breakTotal / 60;
+                console.log(productionTotal);
+                prodToday.innerText = parseInt(productionTotal, 10);
+                breakToday.innerText = parseInt(breakTotal, 10);
+            })
+            .catch((error) => {
+                console.error("Error getting documents: ", error);
+            });
+    });
 
     // subcollection
     async function sendTimeToFirebase(start, end, timeDiff) {
@@ -262,7 +273,6 @@
 </script>
 
 <script>
-
     function setCurrentDate() {
         var now = new Date();
         var year = now.getFullYear();
@@ -280,13 +290,14 @@
         document.getElementById('name').value = getName;
         document.getElementById('process').value = getProcess;
     }
+
     function pieChart() {
         let x = document.getElementById('prodToday').innerText;
         let y = document.getElementById('breakToday').innerText;
         x = (x / 9) * 100;
         y = (y / 9) * 100;
         const xValues = ["Productivity", "Break"];
-        const yValues = [35, 65];
+        const yValues = [x, y];
         const barColors = [
             "#6F40A1",
             "#50E4E4",
