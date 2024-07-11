@@ -57,7 +57,6 @@ body {
 .container {
     display: flex;
     min-width: 100%;
-    /* margin-top: 100px; */
     background-color: black;
     border-color: black;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -186,8 +185,7 @@ button:hover {
     color: #666;
 }
 
-#profile-card {
-    float: left;
+#profile-card { 
     max-width: 300px;
     margin-top: 2px;
     padding: 20px;
@@ -199,12 +197,12 @@ button:hover {
 }
 
 #activity-card {
-   height: 177px;
+    height: 177px;
     margin-top: 3px;
-    margin-left: 10px;
-    float: right;
+    /* margin-left: 10px; */
+    float:none;
     border: 1px solid white;
-    width: 250px;
+    width: 300px;
     background-color: #DFF3FD;
     box-shadow: 0 0 40px rgba(249, 249, 249, 0.1);
     border-radius: 12px;
@@ -222,4 +220,22 @@ button:hover {
 
 .graph-data{
     float: right;
+}
+
+.form-column{
+    max-width: 350px;
+}
+
+#graphical-data{
+    float: left;
+}
+
+.chart-two{
+    margin-top: 10px;
+    float: right;
+    width: 500px;
+}
+
+.refresh-btn{
+background-color: gray;
 }

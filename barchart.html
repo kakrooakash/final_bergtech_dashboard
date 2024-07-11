@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <canvas id="productivityChart" width="400" height="200"></canvas>
+</body>
+<script type="module">
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import { getFirestore, getDoc, doc, query, where, setDoc, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDVMhk4-La8nK63C6rsphn16CPWIrmFbmA",
+        authDomain: "final-project-8c053.firebaseapp.com",
+        projectId: "final-project-8c053",
+        storageBucket: "final-project-8c053.appspot.com",
+        messagingSenderId: "881972436006",
+        appId: "1:881972436006:web:c1df7ce089a267118edae7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getFirestore(app);
+
+    async function fetchProductivityData() {
+        const loggedInUserId = localStorage.getItem('loggedInUserId');
+        const productivityData = [];
+        const dateLabels = [];
+
+        const q = query(collection(db, "EmployeeActivity", loggedInUserId, "activity"));
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            dateLabels.push(data.date);
+            productivityData.push(parseInt(data.difference, 10)); 
+        });
+        return { dateLabels, productivityData };
+    }
+
+    async function createBarChart() {
+        const { dateLabels, productivityData } = await fetchProductivityData();
+        console.log(productivityData);
+        console.log(dateLabels);
+        const ctx = document.getElementById('productivityChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: dateLabels,
+                datasets: [{
+                    label: 'Productivity',
+                    data: productivityData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    createBarChart();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</html>

@@ -20,6 +20,9 @@
                 <li><a href="#">Updates</a></li>
                 <li><a href="#">Faq</a></li>
                 <button id="sign-out" class="signout">Sign Out</button>
+                <li id="startTime">Start</li>
+                <li id="endTime">End</li>
+                <li id="currentDate">Date</li>
             </ul>
         </nav>
     </header>
@@ -49,14 +52,15 @@
                         </select>
                         <div class="buttons">
                             <button id="startButton" class="buttontimmer">Start</button>
-                            <button id="endButton" class="buttontimmer">End</button>
+                            <button id="endButton" class="buttontimmer" onclick="setCurrentDate()">End</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
+
         <div class="output-column">
-            <h2>Employee Productivity Dashboard <button onclick="pieChart()" class="refresh-btn"><i
+            <h2>Employee Activity Dashboard <button onclick="pieChart()" class="refresh-btn"><i
                         class="fa-solid fa-arrows-rotate"></i></button></h2>
             <ul id="activityData" hidden></ul>
             <input type="hidden" id="currentDate" name="currentDate">
@@ -69,9 +73,17 @@
                     <canvas id="myChart" class="myChart"></canvas>
                 </div>
                 <div class="graph-data">
-                    <div>Productivity: <span id="prodToday" name="prodToday"></span> Hrs</div>
-                    <div>Break: <span id="breakToday" name="breakToday"></span> Hrs</div>
+                    <div><span id="prodToday" name="prodToday"></span></div>
+                    <div><span id="breakToday" name="breakToday"></span></div>
+                    <!-- <div><span id="prodBToday" name="prodBToday" hidden></span></div>
+                    <div><span id="breakBToday" name="breakBToday" hidden></span></div> -->
+
                 </div>
+            </div>
+            <div class="chart-two">
+                <input type="date" id="bar-date">
+                <button onclick="getDate()">Get Date</button>
+                <canvas id="productivityChart" width="400" height="200"></canvas>
             </div>
         </div>
     </div>
@@ -79,9 +91,11 @@
     <script src="currentTime.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-        import { getFirestore, getDoc, doc, setDoc, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+        import { getFirestore, getDoc, doc, query, where, setDoc, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
 
         const firebaseConfig = {
@@ -153,7 +167,6 @@
                         var formattedDate = year + '-' + month + '-' + day;
                         console.log(formattedDate);
                         if (formattedDate == date) {
-                            console.log("Inside sum if");
                             if (activity == "Production") {
                                 productionTotal += parseInt(difference, 10);
                             }
@@ -169,11 +182,11 @@
                             console.log("No data found!");
                         }
                     });
+                    console.log(productionTotal,breakTotal);
                     productionTotal = productionTotal / 60;
                     breakTotal = breakTotal / 60;
-
                     prodToday.innerText = parseFloat(productionTotal).toFixed(1);
-                    breakToday.innerText = parseInt(breakTotal, 10).toFixed(1);
+                    breakToday.innerText = parseFloat(breakTotal, 10).toFixed(1);
                 })
                 .catch((error) => {
                     console.error("Error getting documents: ", error);
@@ -188,7 +201,6 @@
                 console.error('Sign out error:', error);
             });
         });
-
 
 
         function startTimer(activity) {
@@ -229,7 +241,7 @@
         }
 
         document.getElementById('startButton').addEventListener('click', (event) => {
-            event.preventDefault(); // Prevent page refresh
+            event.preventDefault();
             const activity = document.getElementById('activity').value;
             startTime = new Date();
             startTime = formatTime(startTime);
@@ -237,11 +249,12 @@
                 currentActivity = activity;
                 startTimer(activity);
             }
+            document.getElementById('startTime').innerText = startTime;
             alert(`Star Time: ${startTime}`);
         });
 
         document.getElementById('endButton').addEventListener('click', (event) => {
-            event.preventDefault(); // Prevent page refresh
+            event.preventDefault();
             endTime = new Date();
             endTime = formatTime(endTime);
             if (currentActivity !== 'none') {
@@ -250,6 +263,7 @@
             }
             alert(`End Time: ${endTime}`);
             alert(`Star Time: ${startTime}`);
+            document.getElementById('endTime').innerText = endTime;
             if (startTime) {
                 const timeDiff = calculateTimeDifference(startTime, endTime);
                 alert(`Time Difference: ${timeDiff}`);
@@ -269,6 +283,49 @@
             }
         });
 
+
+        async function fetchProductivityData() {
+        const loggedInUserId = localStorage.getItem('loggedInUserId');
+        const productivityData = [];
+        const dateLabels = [];
+
+        const q = query(collection(db, "EmployeeActivity", loggedInUserId, "activity"));
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            dateLabels.push(data.date);
+            productivityData.push(parseInt(data.difference, 10)); 
+        });
+        return { dateLabels, productivityData };
+    }
+
+    async function createBarChart() {
+        const { dateLabels, productivityData } = await fetchProductivityData();
+        console.log(productivityData);
+        console.log(dateLabels);
+        const ctx = document.getElementById('productivityChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: dateLabels,
+                datasets: [{
+                    label: 'Productivity',
+                    data: productivityData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    createBarChart();
         function formatTime(date) {
             const hours = String(date.getHours()).padStart(2, '0');
             const minutes = String(date.getMinutes()).padStart(2, '0');
@@ -312,7 +369,6 @@
             document.getElementById('currentDate').value = formattedDate;
         }
 
-
         async function sendTimeToFirebase(start, end, timeDiff) {
             event.preventDefault();
             const activity = document.getElementById("activity").value;
@@ -324,9 +380,6 @@
             var month = String(now.getMonth() + 1).padStart(2, '0');
             var day = String(now.getDate()).padStart(2, '0');
             var formattedDate = year + '-' + month + '-' + day;
-            console.log("Hiii" + start, end);
-            console.log(formattedDate);
-            console.log(timeDiff);
             try {
                 const docRef = collection(db, "EmployeeActivity", loggedInUserId, "activity");
                 // Set data
@@ -344,6 +397,7 @@
             }
         }
 
+
         function getDetails() {
             const getId = document.getElementById('loggedEmployeeId').innerText;
             const getName = document.getElementById('loggedUserName').innerText;
@@ -353,13 +407,58 @@
             document.getElementById('process').value = getProcess;
         }
 
+        // async function getDate() {
+        //     const loggedInUserId = localStorage.getItem('loggedInUserId');
+        //     // var dateInput = document.getElementById('bar-date').value;
+        //     var now = new Date();
+        //     var year = now.getFullYear();
+        //     var month = String(now.getMonth() + 1).padStart(2, '0');
+        //     var day = String(now.getDate()).padStart(2, '0');
+        //     var formattedDate = year + '-' + month + '-' + day;
+        //     console.log(formattedDate);
 
+        //     let productionSum = 0;
+        //     let breakSum = 0;
+
+        //     try {
+        //         console.log("Hii");
+        //         const q = query(collection(db, "EmployeeActivity", loggedInUserId, "activity"), where("date", '==', formattedDate));
+        //         const querySnapshot = await getDocs(q);
+        //         querySnapshot.forEach(doc => {
+        //             const data = doc.data();
+        //             console.log(data);
+        //             const duration = data.difference.split(':'); // Split the duration into minutes and seconds
+        //             const minutes = parseInt(duration[0], 10);
+        //             const seconds = parseInt(duration[1], 10);
+        //             const totalSeconds = (minutes * 60) + seconds;
+
+        //             if (data.activity === "Production") {
+        //                 productionSum += totalSeconds;
+        //             } else if (data.activity === "Break") {
+        //                 breakSum += totalSeconds;
+        //             }
+        //         });
+        //         console.log(productionSum);
+        //         console.log(breakSum);
+        //         productionTotal = productionSum / (60 * 60);
+        //         breakTotal = breakSum / (60 * 60);
+
+        //         // prodBToday.innerText = parseFloat(productionTotal).toFixed(1);
+        //         // breakBToday.innerText = parseInt(breakTotal, 10).toFixed(1);
+
+        //     } catch (error) {
+        //         console.error("Error fetching data: ", error);
+        //     }
+
+        // }
+        // getDate()
     </script>
     <script>
+
         function pieChart() {
             let x = document.getElementById('prodToday').innerText;
             let y = document.getElementById('breakToday').innerText;
-            
+
             console.log(x, y);
 
             x = (x / 9) * 100;
@@ -387,6 +486,22 @@
                     }
                 }
             });
+        }
+
+        function pieChart() {
+            let x = document.getElementById('prodToday').innerText;
+            let y = document.getElementById('breakToday').innerText;
+
+            console.log(x, y);
+        }
+        function setCurrentDate() {
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var formattedDate = year + '-' + month + '-' + day;
+            console.log(formattedDate);
+            document.getElementById('currentDate').innerText = formattedDate;
         }
     </script>
 </body>
