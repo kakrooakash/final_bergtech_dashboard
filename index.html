@@ -191,83 +191,73 @@
                 });
         });
 
-        document.getElementById('sign-out').addEventListener('click', () => {
-            var username = document.getElementById('loggedUserName').innerHTML;
-            var employeeid = document.getElementById('loggedEmployeeId').innerHTML;
-            var process = document.getElementById('loggedProcess').innerHTML;
-            var now = new Date();
-            var year = now.getFullYear();
-            var month = String(now.getMonth() + 1).padStart(2, '0');
-            var day = String(now.getDate()).padStart(2, '0');
-            var formattedDate = year + '-' + month + '-' + day;
-            const loggedInUserId = localStorage.getItem('loggedInUserId');
+    document.getElementById('sign-out').addEventListener('click', () => {
+    var username = document.getElementById('loggedUserName').innerHTML;
+    var employeeid = document.getElementById('loggedEmployeeId').innerHTML;
+    var process = document.getElementById('loggedProcess').innerHTML;
+    var now = new Date();
+    var year = now.getFullYear();
+    var month = String(now.getMonth() + 1).padStart(2, '0');
+    var day = String(now.getDate()).padStart(2, '0');
+    var formattedDate = year + '-' + month + '-' + day;
+    const loggedInUserId = localStorage.getItem('loggedInUserId');
 
-            console.log(username, employeeid, process);
-            var prod;
-            var bre;
-            const userConfirmed = confirm('Are you sure you want to sign out? \nYour production data will be submitted.');
-            if (userConfirmed) {
-                if (loggedInUserId) {
-                    const docRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
-                    getDoc(docRef)
-                        .then((docsnap) => {
-                            if (docsnap.exists()) {
-                                const userData = docsnap.data();
-                                prod = userData.production;
-                                bre = userData.break;
+    console.log(username, employeeid, process);
+    var prod;
+    var bre;
+    const userConfirmed = confirm('Are you sure you want to sign out? \nYour production data will be submitted.');
+    if (userConfirmed) {
+        if (loggedInUserId) {
+            const docRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
+            getDoc(docRef)
+                .then((docsnap) => {
+                    if (docsnap.exists()) {
+                        const userData = docsnap.data();
+                        prod = userData.production;
+                        bre = userData.break;
 
-                                const formData = new FormData();
-                                formData.append('date', formattedDate);
-                                formData.append('username', username);
-                                formData.append('employeeid', employeeid);
-                                formData.append('process', process);
-                                formData.append('production', prod);
-                                formData.append('break', bre);
-                                fetch(scriptURL2, { method: 'POST', body: formData })
-                                    .then(response => {
-                                        if (response.ok) {
-                                            alert("Data sent to Google Sheets successfully.");
-                                            // Optionally reload or perform other actions after success
-                                        } else {
-                                            throw new Error('Failed to send data to Google Sheets.');
-                                        }
-                                    })
-                                    .catch(error => console.error('Error sending data to Google Sheets:', error));
-                            } else {
-                                console.log("No document found");
-                            }
-                        })
-                        .then(() => {
-                            console.log("Data sent to Firestore successfully.");
-                            // Sign out the user
-                            auth.signOut().then(() => {
-                                stopTimer('Production');
-                                stopTimer('Break');
-                                prodElapsedTime = 0;
-                                breakElapsedTime = 0;
-                                currentActivity = 'none';
-                                startTime = null;
-                                localStorage.removeItem('prodElapsedTime');
-                                localStorage.removeItem('breakElapsedTime');
-                                localStorage.removeItem('currentActivity');
-                                localStorage.removeItem('startTime');
-                                displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
-                                displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
-                                document.getElementById('startTime').innerText = '';
-                                document.getElementById('endTime').innerText = '';
+                        const formData = new FormData();
+                        formData.append('date', formattedDate);
+                        formData.append('username', username);
+                        formData.append('employeeid', employeeid);
+                        formData.append('process', process);
+                        formData.append('production', prod);
+                        formData.append('break', bre);
+                        return fetch(scriptURL2, { method: 'POST', body: formData });
+                    } else {
+                        throw new Error("No document found");
+                    }
+                })
+                .then(() => {
+                    console.log("Data sent to Firestore successfully.");
+                    // Sign out the user
+                    return auth.signOut();
+                })
+                .then(() => {
+                    stopTimer('Production');
+                    stopTimer('Break');
+                    prodElapsedTime = 0;
+                    breakElapsedTime = 0;
+                    currentActivity = 'none';
+                    startTime = null;
+                    localStorage.removeItem('prodElapsedTime');
+                    localStorage.removeItem('breakElapsedTime');
+                    localStorage.removeItem('currentActivity');
+                    localStorage.removeItem('startTime');
+                    displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
+                    displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
+                    document.getElementById('startTime').innerText = '';
+                    document.getElementById('endTime').innerText = '';
 
-                                console.log('User signed out successfully.');
-                                window.location.replace("signup.html");
-                            }).catch((error) => {
-                                console.error('Sign out error:', error);
-                            });
-                        })
-                        .catch(error => {
-                            console.error("Error sending data to Firestore:", error);
-                        });
-                }
-            }
-        });
+                    console.log('User signed out successfully.');
+                    window.location.replace("signup.html");
+                })
+                .catch(error => {
+                    console.error("Error during sign-out process:", error);
+                });
+        }
+    }
+});
 
 
 
@@ -513,8 +503,12 @@
             // Calculate the difference in seconds
             const secondsDiff = totalEndSeconds - totalStartSeconds;
 
-            return secondsDiff / (60 * 60);
+            // Convert seconds to minutes and round to one decimal place
+            // const minutesDiff = (secondsDiff / 60);
+
+            return parseFloat(secondsDiff);
         }
+
 
         function setCurrentDate() {
             var now = new Date();
@@ -607,8 +601,8 @@
                 const dailyDoc = await getDoc(dailyRef);
                 if (dailyDoc.exists()) {
                     const data = dailyDoc.data();
-                    const productionMinutes = data.production;  // Convert seconds to minutes
-                    const breakMinutes = data.break; // Convert seconds to minutes
+                    const productionMinutes = data.production/(60*60);  // Convert seconds to minutes
+                    const breakMinutes = data.break/(60*60); // Convert seconds to minutes
                     productionData.push(productionMinutes);
                     breakData.push(breakMinutes);
                 } else {
@@ -673,9 +667,9 @@
         createProductionChart();
 
         function pieChart(prod, bre) {
-            let x = (prod / 9) * 100;
-            let y = (bre / 9) * 100;
-
+            let x = (((prod)/(60*60)) / 9) * 100;
+            let y = (((bre)/(60*60)) / 9) * 100;
+            
             const xValues = ["Productivity", "Break"];
             const yValues = [x, y];
             const barColors = [
