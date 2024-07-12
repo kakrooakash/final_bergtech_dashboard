@@ -191,73 +191,73 @@
                 });
         });
 
-    document.getElementById('sign-out').addEventListener('click', () => {
-    var username = document.getElementById('loggedUserName').innerHTML;
-    var employeeid = document.getElementById('loggedEmployeeId').innerHTML;
-    var process = document.getElementById('loggedProcess').innerHTML;
-    var now = new Date();
-    var year = now.getFullYear();
-    var month = String(now.getMonth() + 1).padStart(2, '0');
-    var day = String(now.getDate()).padStart(2, '0');
-    var formattedDate = year + '-' + month + '-' + day;
-    const loggedInUserId = localStorage.getItem('loggedInUserId');
+        document.getElementById('sign-out').addEventListener('click', () => {
+            var username = document.getElementById('loggedUserName').innerHTML;
+            var employeeid = document.getElementById('loggedEmployeeId').innerHTML;
+            var process = document.getElementById('loggedProcess').innerHTML;
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var formattedDate = year + '-' + month + '-' + day;
+            const loggedInUserId = localStorage.getItem('loggedInUserId');
 
-    console.log(username, employeeid, process);
-    var prod;
-    var bre;
-    const userConfirmed = confirm('Are you sure you want to sign out? \nYour production data will be submitted.');
-    if (userConfirmed) {
-        if (loggedInUserId) {
-            const docRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
-            getDoc(docRef)
-                .then((docsnap) => {
-                    if (docsnap.exists()) {
-                        const userData = docsnap.data();
-                        prod = userData.production;
-                        bre = userData.break;
+            console.log(username, employeeid, process);
+            var prod;
+            var bre;
+            const userConfirmed = confirm('Are you sure you want to sign out? \nYour production data will be submitted.');
+            if (userConfirmed) {
+                if (loggedInUserId) {
+                    const docRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
+                    getDoc(docRef)
+                        .then((docsnap) => {
+                            if (docsnap.exists()) {
+                                const userData = docsnap.data();
+                                prod = userData.production;
+                                bre = userData.break;
 
-                        const formData = new FormData();
-                        formData.append('date', formattedDate);
-                        formData.append('username', username);
-                        formData.append('employeeid', employeeid);
-                        formData.append('process', process);
-                        formData.append('production', prod);
-                        formData.append('break', bre);
-                        return fetch(scriptURL2, { method: 'POST', body: formData });
-                    } else {
-                        throw new Error("No document found");
-                    }
-                })
-                .then(() => {
-                    console.log("Data sent to Firestore successfully.");
-                    // Sign out the user
-                    return auth.signOut();
-                })
-                .then(() => {
-                    stopTimer('Production');
-                    stopTimer('Break');
-                    prodElapsedTime = 0;
-                    breakElapsedTime = 0;
-                    currentActivity = 'none';
-                    startTime = null;
-                    localStorage.removeItem('prodElapsedTime');
-                    localStorage.removeItem('breakElapsedTime');
-                    localStorage.removeItem('currentActivity');
-                    localStorage.removeItem('startTime');
-                    displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
-                    displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
-                    document.getElementById('startTime').innerText = '';
-                    document.getElementById('endTime').innerText = '';
+                                const formData = new FormData();
+                                formData.append('date', formattedDate);
+                                formData.append('username', username);
+                                formData.append('employeeid', employeeid);
+                                formData.append('process', process);
+                                formData.append('production', prod);
+                                formData.append('break', bre);
+                                return fetch(scriptURL2, { method: 'POST', body: formData });
+                            } else {
+                                throw new Error("No document found");
+                            }
+                        })
+                        .then(() => {
+                            console.log("Data sent to Firestore successfully.");
+                            // Sign out the user
+                            return auth.signOut();
+                        })
+                        .then(() => {
+                            stopTimer('Production');
+                            stopTimer('Break');
+                            prodElapsedTime = 0;
+                            breakElapsedTime = 0;
+                            currentActivity = 'none';
+                            startTime = null;
+                            localStorage.removeItem('prodElapsedTime');
+                            localStorage.removeItem('breakElapsedTime');
+                            localStorage.removeItem('currentActivity');
+                            localStorage.removeItem('startTime');
+                            displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
+                            displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
+                            document.getElementById('startTime').innerText = '';
+                            document.getElementById('endTime').innerText = '';
 
-                    console.log('User signed out successfully.');
-                    window.location.replace("signup.html");
-                })
-                .catch(error => {
-                    console.error("Error during sign-out process:", error);
-                });
-        }
-    }
-});
+                            console.log('User signed out successfully.');
+                            window.location.replace("signup.html");
+                        })
+                        .catch(error => {
+                            console.error("Error during sign-out process:", error);
+                        });
+                }
+            }
+        });
 
 
 
@@ -265,6 +265,8 @@
 
         function startTimer(activity) {
             function updateTimer() {
+                // const now = new Date();
+                // const elapsed = now - startTime;
                 if (activity === 'Production') {
                     prodElapsedTime += 1000; // increment by 1 second
                     localStorage.setItem('prodElapsedTime', prodElapsedTime);
@@ -359,7 +361,7 @@
             localStorage.removeItem('startTime');
 
             var username = document.getElementById('loggedUserName').innerHTML;
-            var process = document.getElementById('loggedProcess').value;
+            var process = document.getElementById('loggedProcess').innerHTML;
             var employeeid = document.getElementById('loggedEmployeeId').innerHTML;
             var sTime = document.getElementById('startTime').innerText;
             var eTime = document.getElementById('endTime').innerText;
@@ -421,6 +423,11 @@
         window.addEventListener('load', () => {
             const savedActivity = localStorage.getItem('currentActivity');
             const savedStartTime = localStorage.getItem('startTime');
+
+            // Display the saved elapsed times for both activities
+            displayTime(parseInt(localStorage.getItem('prodElapsedTime') || '0'), 'prod-timer', 'Production Time: ');
+            displayTime(parseInt(localStorage.getItem('breakElapsedTime') || '0'), 'break-timer', 'Break Time: ');
+
             if (savedActivity && savedStartTime) {
                 document.getElementById('activity').value = savedActivity;
                 document.getElementById('startTime').innerText = formatTime(new Date(savedStartTime));
@@ -433,14 +440,8 @@
                 // Enable end button
                 document.getElementById('endButton').disabled = false;
 
-                // Display elapsed time on page load
-                if (savedActivity === 'Production') {
-                    displayTime(parseInt(localStorage.getItem('prodElapsedTime') || '0'), 'prod-timer-display', 'Production Time: ');
-                } else if (savedActivity.startsWith('Break')) {
-                    displayTime(parseInt(localStorage.getItem('breakElapsedTime') || '0'), 'break-timer-display', 'Break Time: ');
-                }
-
-                startTimer(savedActivity); // Start the timer again if activity was in progress
+                // Start the timer again if activity was in progress
+                startTimer(savedActivity);
             } else {
                 // Enable activity dropdown and start button
                 document.getElementById('activity').disabled = false;
@@ -450,6 +451,39 @@
                 document.getElementById('endButton').disabled = true;
             }
         });
+
+        // window.addEventListener('load', () => {
+        //     const savedActivity = localStorage.getItem('currentActivity');
+        //     const savedStartTime = localStorage.getItem('startTime');
+        //     if (savedActivity && savedStartTime) {
+        //         document.getElementById('activity').value = savedActivity;
+        //         document.getElementById('startTime').innerText = formatTime(new Date(savedStartTime));
+        //         startTime = new Date(savedStartTime);
+
+        //         // Disable activity dropdown and start button
+        //         document.getElementById('activity').disabled = true;
+        //         document.getElementById('startButton').disabled = true;
+
+        //         // Enable end button
+        //         document.getElementById('endButton').disabled = false;
+
+        //         // Display elapsed time on page load
+        //         if (savedActivity === 'Production') {
+        //             displayTime(parseInt(localStorage.getItem('prodElapsedTime') || '0'), 'prod-timer', 'Production Time: ');
+        //         } else if (savedActivity.startsWith('Break')) {
+        //             displayTime(parseInt(localStorage.getItem('breakElapsedTime') || '0'), 'break-timer', 'Break Time: ');
+        //         }
+
+        //         startTimer(savedActivity); // Start the timer again if activity was in progress
+        //     } else {
+        //         // Enable activity dropdown and start button
+        //         document.getElementById('activity').disabled = false;
+        //         document.getElementById('startButton').disabled = false;
+
+        //         // Disable end button
+        //         document.getElementById('endButton').disabled = true;
+        //     }
+        // });
 
         async function fetchProductivityData() {
             const loggedInUserId = localStorage.getItem('loggedInUserId');
@@ -601,8 +635,8 @@
                 const dailyDoc = await getDoc(dailyRef);
                 if (dailyDoc.exists()) {
                     const data = dailyDoc.data();
-                    const productionMinutes = data.production/(60*60);  // Convert seconds to minutes
-                    const breakMinutes = data.break/(60*60); // Convert seconds to minutes
+                    const productionMinutes = data.production / (60 * 60);  // Convert seconds to minutes
+                    const breakMinutes = data.break / (60 * 60); // Convert seconds to minutes
                     productionData.push(productionMinutes);
                     breakData.push(breakMinutes);
                 } else {
@@ -667,9 +701,9 @@
         createProductionChart();
 
         function pieChart(prod, bre) {
-            let x = (((prod)/(60*60)) / 9) * 100;
-            let y = (((bre)/(60*60)) / 9) * 100;
-            
+            let x = (((prod) / (60 * 60)) / 9) * 100;
+            let y = (((bre) / (60 * 60)) / 9) * 100;
+
             const xValues = ["Productivity", "Break"];
             const yValues = [x, y];
             const barColors = [
