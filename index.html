@@ -112,7 +112,7 @@
         const auth = getAuth();
         const db = getFirestore(app);
 
-        let startTime;
+
         let endTime;
 
         let productionTotal = 0;
@@ -124,10 +124,13 @@
         let prodInterval;
         let breakInterval;
 
-        let prodElapsedTime = 0;
-        let breakElapsedTime = 0;
 
-        let currentActivity = 'none';
+
+        let prodElapsedTime = localStorage.getItem('prodElapsedTime') ? parseInt(localStorage.getItem('prodElapsedTime')) : 0;
+        let breakElapsedTime = localStorage.getItem('breakElapsedTime') ? parseInt(localStorage.getItem('breakElapsedTime')) : 0;
+        let currentActivity = localStorage.getItem('currentActivity') || 'none';
+        let startTime = localStorage.getItem('startTime') ? new Date(localStorage.getItem('startTime')) : null;
+
 
         onAuthStateChanged(auth, (user) => {
             const loggedInUserId = localStorage.getItem('loggedInUserId');
@@ -195,6 +198,20 @@
 
         document.getElementById('sign-out').addEventListener('click', () => {
             auth.signOut().then(() => {
+                stopTimer('Production');
+                stopTimer('Break');
+                prodElapsedTime = 0;
+                breakElapsedTime = 0;
+                currentActivity = 'none';
+                startTime = null;
+                localStorage.removeItem('prodElapsedTime');
+                localStorage.removeItem('breakElapsedTime');
+                localStorage.removeItem('currentActivity');
+                localStorage.removeItem('startTime');
+                displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
+                displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
+                document.getElementById('startTime').innerText = '';
+                document.getElementById('endTime').innerText = '';
                 console.log('User signed out successfully.');
                 window.location.replace("signup.html");
             }).catch((error) => {
@@ -203,13 +220,16 @@
         });
 
 
+
         function startTimer(activity) {
             function updateTimer() {
                 if (activity === 'Production') {
                     prodElapsedTime += 1000; // increment by 1 second
+                    localStorage.setItem('prodElapsedTime', prodElapsedTime);
                     displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
                 } else if (activity.startsWith('Break')) {
                     breakElapsedTime += 1000; // increment by 1 second
+                    localStorage.setItem('breakElapsedTime', breakElapsedTime);
                     displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
                 }
             }
@@ -222,6 +242,7 @@
                 breakInterval = setInterval(updateTimer, 1000);
             }
         }
+
 
         function stopTimer(activity) {
             if (activity === 'Production') {
@@ -237,40 +258,51 @@
             const minutes = Math.floor((totalSeconds % 3600) / 60);
             const seconds = totalSeconds % 60;
 
-            document.getElementById(elementId).textContent = `${prefix} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            const element = document.getElementById(elementId);
+            element.textContent = `${prefix} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            if (elementId === 'break-timer' && hours >= 1) {
+                element.style.color = 'red';
+            } else {
+                element.style.color = ''; // Reset to default color
+            }
         }
+
 
         document.getElementById('startButton').addEventListener('click', (event) => {
             event.preventDefault();
             const activity = document.getElementById('activity').value;
             startTime = new Date();
+            localStorage.setItem('startTime', startTime);
             startTime = formatTime(startTime);
             if (activity !== 'none') {
                 currentActivity = activity;
+                localStorage.setItem('currentActivity', currentActivity);
                 startTimer(activity);
             }
             document.getElementById('startTime').innerText = startTime;
-            alert(`Star Time: ${startTime}`);
+            alert(`Start Time: ${startTime}`);
         });
 
         document.getElementById('endButton').addEventListener('click', (event) => {
             event.preventDefault();
-            endTime = new Date();
-            endTime = formatTime(endTime);
+            const endTime = new Date();
+            const formattedEndTime = formatTime(endTime);
             if (currentActivity !== 'none') {
                 stopTimer(currentActivity);
                 currentActivity = 'none';
+                localStorage.removeItem('currentActivity');
             }
-            alert(`End Time: ${endTime}`);
-            alert(`Star Time: ${startTime}`);
-            document.getElementById('endTime').innerText = endTime;
+            alert(`End Time: ${formattedEndTime}`);
+            document.getElementById('endTime').innerText = formattedEndTime;
             if (startTime) {
-                const timeDiff = calculateTimeDifference(startTime, endTime);
+                const timeDiff = calculateTimeDifference(startTime, formattedEndTime);
                 alert(`Time Difference: ${timeDiff}`);
-                sendTimeToFirebase(startTime, endTime, timeDiff);
+                sendTimeToFirebase(startTime, formattedEndTime, timeDiff);
             } else {
                 console.error('Start time is not set');
             }
+            localStorage.removeItem('startTime');
         });
 
         document.getElementById('activity').addEventListener('change', (event) => {
@@ -280,8 +312,20 @@
                     stopTimer(currentActivity);
                 }
                 currentActivity = selectedActivity;
+                localStorage.setItem('currentActivity', currentActivity);
             }
         });
+
+        window.onload = () => {
+            if (currentActivity !== 'none') {
+                startTimer(currentActivity);
+            }
+            if (startTime) {
+                document.getElementById('startTime').innerText = formatTime(new Date(startTime));
+            }
+            displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
+            displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
+        }
 
         async function fetchProductivityData() {
             const loggedInUserId = localStorage.getItem('loggedInUserId');
@@ -436,8 +480,8 @@
                 const dailyDoc = await getDoc(dailyRef);
                 if (dailyDoc.exists()) {
                     const data = dailyDoc.data();
-                    const productionMinutes = data.production / (60*60); // Convert seconds to minutes
-                    const breakMinutes = data.break / (60*60); // Convert seconds to minutes
+                    const productionMinutes = data.production / (60 * 60); // Convert seconds to minutes
+                    const breakMinutes = data.break / (60 * 60); // Convert seconds to minutes
                     productionData.push(productionMinutes);
                     breakData.push(breakMinutes);
                 } else {
@@ -485,6 +529,7 @@
         // Call this function to create the chart
         createProductionChart();
 
+    
     </script>
     <script>
 
@@ -497,7 +542,7 @@
             x = (x / 9) * 100;
             y = (y / 9) * 100;
             const xValues = ["Productivity", "Break"];
-            const yValues = [x, y];
+            const yValues = [35, 65];
             const barColors = [
                 "#6F40A1",
                 "#50E4E4",
@@ -521,12 +566,6 @@
             });
         }
 
-        function pieChart() {
-            let x = document.getElementById('prodToday').innerText;
-            let y = document.getElementById('breakToday').innerText;
-
-            console.log(x, y);
-        }
         function setCurrentDate() {
             var now = new Date();
             var year = now.getFullYear();
