@@ -39,7 +39,7 @@
                     <br>
                 </div>
                 <div id="activity-card">
-                    <form id="myForm" name="submit-to-google-sheet" class="myform">
+                    <form id="contact-form" method="post">
                         <label for="activity">Select your activity:</label>
                         <select type="dropdown" name="activity" id="activity" class="form-control"
                             placeholder="Activity" required>
@@ -124,7 +124,8 @@
         let prodInterval;
         let breakInterval;
 
-
+        const scriptURL = 'https://script.google.com/macros/s/AKfycby_-Sg6pPeZC833QU_dM8bH7tSAvQngjz5c0iJlBo-I-cWNdN8BNaU_3WrXfS-gPm7M5g/exec';
+        const form = document.forms['contact-form'];
 
         let prodElapsedTime = localStorage.getItem('prodElapsedTime') ? parseInt(localStorage.getItem('prodElapsedTime')) : 0;
         let breakElapsedTime = localStorage.getItem('breakElapsedTime') ? parseInt(localStorage.getItem('breakElapsedTime')) : 0;
@@ -243,7 +244,6 @@
             }
         }
 
-
         function stopTimer(activity) {
             if (activity === 'Production') {
                 clearInterval(prodInterval);
@@ -268,7 +268,6 @@
             }
         }
 
-
         document.getElementById('startButton').addEventListener('click', (event) => {
             event.preventDefault();
             const activity = document.getElementById('activity').value;
@@ -286,6 +285,7 @@
 
         document.getElementById('endButton').addEventListener('click', (event) => {
             event.preventDefault();
+            var timeDiff;
             const endTime = new Date();
             const formattedEndTime = formatTime(endTime);
             if (currentActivity !== 'none') {
@@ -296,13 +296,45 @@
             alert(`End Time: ${formattedEndTime}`);
             document.getElementById('endTime').innerText = formattedEndTime;
             if (startTime) {
-                const timeDiff = calculateTimeDifference(startTime, formattedEndTime);
+                timeDiff = calculateTimeDifference(startTime, formattedEndTime);
                 alert(`Time Difference: ${timeDiff}`);
                 sendTimeToFirebase(startTime, formattedEndTime, timeDiff);
             } else {
                 console.error('Start time is not set');
             }
             localStorage.removeItem('startTime');
+
+            var username = document.getElementById('loggedUserName').innerHTML;
+            var process = document.getElementById('activity').value;
+            var employeeid = document.getElementById('loggedEmployeeId').innerHTML;
+            var sTime = document.getElementById('startTime').innerText;
+            var eTime = document.getElementById('endTime').innerText;
+
+            console.log(username);
+            console.log(process);
+            console.log(employeeid);
+            console.log(sTime);
+            console.log(eTime);
+            console.log(timeDiff);
+
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('employeeid', employeeid);
+            formData.append('process', process);
+            formData.append('start-time', sTime);
+            formData.append('end-time', eTime);
+            formData.append('duration', timeDiff);
+
+            fetch(scriptURL, { method: 'POST', body: formData })
+                .then(response => {
+                    if (response.ok) {
+                        alert("Data sent to Google Sheets successfully.");
+                        // Optionally reload or perform other actions after success
+                    } else {
+                        throw new Error('Failed to send data to Google Sheets.');
+                    }
+                })
+                .catch(error => console.error('Error sending data to Google Sheets:', error));
         });
 
         document.getElementById('activity').addEventListener('change', (event) => {
@@ -529,7 +561,7 @@
         // Call this function to create the chart
         createProductionChart();
 
-    
+
     </script>
     <script>
 

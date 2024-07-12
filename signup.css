@@ -150,6 +150,7 @@ h6 span{
     transition: all 200ms linear;
 }
 
+
 .form-group input:-ms-input-placeholder  {
   color: #c4c3ca;
   opacity: 0.7;
