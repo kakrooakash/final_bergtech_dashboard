@@ -142,7 +142,7 @@
                                 const docRef = doc(db, "users", user.uid);
                                 setDoc(docRef, userData)
                                     .then(() => {
-                                        // window.location.replace("login.html");
+                                        window.location.replace("login.html");
                                         window.location.reload();
                                     })
                                     .catch((error) => {

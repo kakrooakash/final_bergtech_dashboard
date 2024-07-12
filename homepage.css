@@ -39,6 +39,7 @@ header li {
     margin: 20px;
 }
 
+
 header li a {
     color: black;
     text-decoration: none;
@@ -55,7 +56,9 @@ body {
 }
 
 .container {
+    /* margin-top: 30px; */
     display: flex;
+    height: 565px;
     min-width: 100%;
     background-color: black;
     border-color: black;
@@ -71,7 +74,7 @@ body {
 }
 
 .form-column {
-    background-color: #f9f9f9;
+    background-color: white;
     border-right: 1px solid #ddd;
 }
 
@@ -121,9 +124,43 @@ button:hover {
 }
 
 .signout {
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    background: #3498db;
+    padding: 15px 25px;
+    border: unset;
+    border-radius: 15px;
+    color: #212121;
+    z-index: 1;
+    background: #e8e8e8;
+    position: relative;
+    font-weight: 1000;
+    font-size: 17px;
+    -webkit-box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+    box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+    transition: all 250ms;
+    overflow: hidden;
 }
+
+.signout::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0;
+    border-radius: 15px;
+    background-color: #212121;
+    z-index: -1;
+    -webkit-box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+    box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+    transition: all 250ms
+   }
+   
+   .signout:hover {
+    color: #e8e8e8;
+   }
+   
+   .signout:hover::before {
+    width: 100%;
+   }
 
 .form-control {
     width: 200px;
@@ -166,14 +203,11 @@ button:hover {
 
 }
 
-#myChart {
-    size: 20px;
-}
 
 
 #profile-card h2 {
     text-align: center;
-    color: #333;
+    color: black;
 }
 
 #profile-card div {
@@ -182,60 +216,96 @@ button:hover {
 
 #profile-card div span {
     font-weight: bold;
-    color: #666;
+    color: black;
 }
 
-#profile-card { 
+#profile-card {
+    border-radius: 10px;
+    background: #e0e0e0;
+    box-shadow: 22px 22px 67px #bebebe,  -22px -22px 67px #ffffff;
     max-width: 300px;
     margin-top: 2px;
     padding: 20px;
-    background-color: #DFF3FD;
-    border: 1px solid white;
-    border-radius: 12px;
-    box-shadow: 0 0 40px rgba(249, 249, 249, 0.1);
     font-family: Arial, sans-serif;
 }
 
 #activity-card {
     height: 177px;
-    margin-top: 3px;
-    /* margin-left: 10px; */
-    float:none;
-    border: 1px solid white;
+    margin-top: 60px;
+    float: none;
     width: 300px;
-    background-color: #DFF3FD;
-    box-shadow: 0 0 40px rgba(249, 249, 249, 0.1);
-    border-radius: 12px;
+    background: #e0e0e0;
+    box-shadow: 22px 22px 67px #bebebe,  -22px -22px 67px #ffffff;
+    border-radius: 10px;
     padding: 20px;
 
 }
 
-.chart{
-    height: 300px;
-}
-
-.chart{
+.chart {
     float: left;
 }
 
-.graph-data{
+.graph-data {
     float: right;
 }
 
-.form-column{
+.form-column {
     max-width: 350px;
 }
 
-#graphical-data{
+#graphical-data {
     float: left;
 }
 
-.chart-two{
-    margin-top: 10px;
+.chart-two {
+    border-radius: 20px;
+    background: linear-gradient(315deg, #cdc7d6, #f4ecff);
+    box-shadow:  -20px -20px 81px #d6d0e0,
+                 20px 20px 81px #f2eafc;
+    margin-top: 30px;
     float: right;
     width: 500px;
+    padding: 20px;
+    height: 295px;
 }
 
-.refresh-btn{
-background-color: gray;
+.refresh-btn {
+    background-color: gray;
+}
+
+#prod-timer {
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 15px;
+    background-color: #191c24;
+    color: white;
+    /* box-shadow: 0 4px 15px rgba(0, 0, 0, 0.588); */
+}
+
+#break-timer {
+    margin-right: 390px;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 15px;
+    background-color: #191c24;
+    color: white;
+    /* box-shadow: 0 4px 15px rgba(0, 0, 0, 0.588); */
+}
+
+#myChart {
+    size: 20px;
+}
+
+.chart{
+    border-radius: 20px;
+    background: #e0e0e0;
+    box-shadow: 22px 22px 67px #bebebe,  -22px -22px 67px #ffffff;
+   margin-top: 30px;
+   height: 300px;
+   padding: 20px;
+}
+
+.output-column{
+    text-align: center;
+    background-color:white;
 }

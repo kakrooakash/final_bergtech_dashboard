@@ -16,74 +16,68 @@
             <ul>
                 <li id="prod-timer">Production Time: 00:00:00</li>
                 <li id="break-timer">Break Time: 00:00:00</li>
-                <li><a href="#">Home</a></li>
-                <li><a href="#">Updates</a></li>
-                <li><a href="#">Faq</a></li>
                 <button id="sign-out" class="signout">Sign Out</button>
-                <li id="startTime">Start</li>
-                <li id="endTime">End</li>
-                <li id="currentDate">Date</li>
             </ul>
         </nav>
     </header>
 
     <div class="container">
         <div class="form-column">
-            <div class="twocontainer">
-                <div id="profile-card">
-                    <h2>Employee Profile</h2>
-                    <div>Username: <span id="loggedUserName" name="loggedUserName"></span></div>
-                    <div>Emailid: <span id="loggedEmailId" name="loggedEmailId"></span></div>
-                    <div>Employeeid: <span id="loggedEmployeeId" name="loggedEmployeeId"></span></div>
-                    <div>Process: <span id="loggedProcess" name="loggedProcess"></span></div>
-                    <br>
-                </div>
-                <div id="activity-card">
-                    <form id="contact-form" method="post">
-                        <label for="activity">Select your activity:</label>
-                        <select type="dropdown" name="activity" id="activity" class="form-control"
-                            placeholder="Activity" required>
-                            <option value="none">Select Activity</option>
-                            <option value="Production">Production</option>
-                            <option value="Break">Tea Break</option>
-                            <option value="Break">Bio Break</option>
-                            <option value="Break">Lunch Break</option>
-                            <option value="Production">Training</option>
-                        </select>
-                        <div class="buttons">
-                            <button id="startButton" class="buttontimmer">Start</button>
-                            <button id="endButton" class="buttontimmer" onclick="setCurrentDate()">End</button>
-                        </div>
-                    </form>
-                </div>
+            <div id="profile-card">
+                <h2>Employee Profile</h2>
+                <div>Employee Name: <span id="loggedUserName" name="loggedUserName"></span></div>
+                <div>Email: <span id="loggedEmailId" name="loggedEmailId"></span></div>
+                <div>Employee Id: <span id="loggedEmployeeId" name="loggedEmployeeId"></span></div>
+                <div>Process: <span id="loggedProcess" name="loggedProcess"></span></div>
+                <br>
             </div>
+            <div id="activity-card">
+                <form id="contact-form" method="post">
+                    <label for="activity">Select your activity:</label>
+                    <select type="dropdown" name="activity" id="activity" class="form-control" placeholder="Activity"
+                        required>
+                        <option value="none">Select Activity</option>
+                        <option value="Production">Production</option>
+                        <option value="Break">Tea Break</option>
+                        <option value="Break">Bio Break</option>
+                        <option value="Break">Lunch Break</option>
+                        <option value="Production">Training</option>
+                    </select>
+                    <div class="buttons">
+                        <button id="startButton" class="buttontimmer">Start</button>
+                        <button id="endButton" class="buttontimmer" onclick="setCurrentDate()">End</button>
+                    </div>
+                </form>
+            </div>
+
         </div>
 
         <div class="output-column">
-            <h2>Employee Activity Dashboard <button onclick="pieChart()" class="refresh-btn"><i
-                        class="fa-solid fa-arrows-rotate"></i></button></h2>
+            <h2>Employee Productivity Dashboard</h2>
+            <!-- <h2>Employee Activity Dashboard <button onclick="pieChart()" class="refresh-btn"><i
+                        class="fa-solid fa-arrows-rotate"></i></button></h2> -->
             <ul id="activityData" hidden></ul>
             <input type="hidden" id="currentDate" name="currentDate">
             <input type="hidden" id="timeDifference" name="timeDifference">
             <input type="hidden" id="id" name="id">
             <input type="hidden" id="name" name="name">
             <input type="hidden" id="process" name="process">
+            <input type="hidden" id="startTime" name="startTime">
+            <input type="hidden" id="endTime" name="endTime">
+            <input type="hidden" id="currentDate" name="currentDate">
+
+
             <div id="graphical-data">
                 <div class="chart">
                     <canvas id="myChart" class="myChart"></canvas>
                 </div>
                 <div class="graph-data">
-                    <div><span id="prodToday" name="prodToday"></span></div>
-                    <div><span id="breakToday" name="breakToday"></span></div>
-                    <!-- <div><span id="prodBToday" name="prodBToday" hidden></span></div>
-                    <div><span id="breakBToday" name="breakBToday" hidden></span></div> -->
-
+                    <div><span id="prodToday" name="prodToday" hidden></span></div>
+                    <div><span id="breToday" name="breToday" hidden></span></div>
                 </div>
             </div>
             <div class="chart-two">
-                <!-- <input type="date" id="bar-date">
-                <button onclick="getDate()">Get Date</button> -->
-                <canvas id="productionChart" width="400" height="200"></canvas>
+                <canvas id="productionChart" width="400" height="250"></canvas>
             </div>
         </div>
     </div>
@@ -94,6 +88,7 @@
 
 
     <script type="module">
+
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
         import { getFirestore, getDoc, updateDoc, doc, query, where, setDoc, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
@@ -124,6 +119,7 @@
         let prodInterval;
         let breakInterval;
 
+        const scriptURL2 = "https://script.google.com/macros/s/AKfycbxpLNJAItDqub4ohM31JsYNPHnA5oHe8u2Eq25WsXYdyEgZJVkiPrzzuTmIYQIfG8HSmQ/exec";
         const scriptURL = 'https://script.google.com/macros/s/AKfycby_-Sg6pPeZC833QU_dM8bH7tSAvQngjz5c0iJlBo-I-cWNdN8BNaU_3WrXfS-gPm7M5g/exec';
         const form = document.forms['contact-form'];
 
@@ -131,6 +127,7 @@
         let breakElapsedTime = localStorage.getItem('breakElapsedTime') ? parseInt(localStorage.getItem('breakElapsedTime')) : 0;
         let currentActivity = localStorage.getItem('currentActivity') || 'none';
         let startTime = localStorage.getItem('startTime') ? new Date(localStorage.getItem('startTime')) : null;
+
 
 
         onAuthStateChanged(auth, (user) => {
@@ -172,10 +169,10 @@
                         console.log(formattedDate);
                         if (formattedDate == date) {
                             if (activity == "Production") {
-                                productionTotal += parseInt(difference, 10);
+                                productionTotal += parseFloat(difference, 10);
                             }
                             if (activity == "Break") {
-                                breakTotal += parseInt(difference, 10);
+                                breakTotal += parseFloat(difference, 10);
                             }
                             const li = document.createElement("li");
                             li.innerText = `${activity} : ${parseInt(difference, 10)} min`;
@@ -187,10 +184,7 @@
                         }
                     });
                     console.log(productionTotal, breakTotal);
-                    productionTotal = productionTotal / 60;
-                    breakTotal = breakTotal / 60;
-                    prodToday.innerText = parseFloat(productionTotal).toFixed(1);
-                    breakToday.innerText = parseFloat(breakTotal, 10).toFixed(1);
+                    pieChart(productionTotal, breakTotal);
                 })
                 .catch((error) => {
                     console.error("Error getting documents: ", error);
@@ -198,27 +192,84 @@
         });
 
         document.getElementById('sign-out').addEventListener('click', () => {
-            auth.signOut().then(() => {
-                stopTimer('Production');
-                stopTimer('Break');
-                prodElapsedTime = 0;
-                breakElapsedTime = 0;
-                currentActivity = 'none';
-                startTime = null;
-                localStorage.removeItem('prodElapsedTime');
-                localStorage.removeItem('breakElapsedTime');
-                localStorage.removeItem('currentActivity');
-                localStorage.removeItem('startTime');
-                displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
-                displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
-                document.getElementById('startTime').innerText = '';
-                document.getElementById('endTime').innerText = '';
-                console.log('User signed out successfully.');
-                window.location.replace("signup.html");
-            }).catch((error) => {
-                console.error('Sign out error:', error);
-            });
+            var username = document.getElementById('loggedUserName').innerHTML;
+            var employeeid = document.getElementById('loggedEmployeeId').innerHTML;
+            var process = document.getElementById('loggedProcess').innerHTML;
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var formattedDate = year + '-' + month + '-' + day;
+            const loggedInUserId = localStorage.getItem('loggedInUserId');
+
+            console.log(username, employeeid, process);
+            var prod;
+            var bre;
+            const userConfirmed = confirm('Are you sure you want to sign out? \nYour production data will be submitted.');
+            if (userConfirmed) {
+                if (loggedInUserId) {
+                    const docRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
+                    getDoc(docRef)
+                        .then((docsnap) => {
+                            if (docsnap.exists()) {
+                                const userData = docsnap.data();
+                                prod = userData.production;
+                                bre = userData.break;
+
+                                const formData = new FormData();
+                                formData.append('date', formattedDate);
+                                formData.append('username', username);
+                                formData.append('employeeid', employeeid);
+                                formData.append('process', process);
+                                formData.append('production', prod);
+                                formData.append('break', bre);
+                                fetch(scriptURL2, { method: 'POST', body: formData })
+                                    .then(response => {
+                                        if (response.ok) {
+                                            alert("Data sent to Google Sheets successfully.");
+                                            // Optionally reload or perform other actions after success
+                                        } else {
+                                            throw new Error('Failed to send data to Google Sheets.');
+                                        }
+                                    })
+                                    .catch(error => console.error('Error sending data to Google Sheets:', error));
+                            } else {
+                                console.log("No document found");
+                            }
+                        })
+                        .then(() => {
+                            console.log("Data sent to Firestore successfully.");
+                            // Sign out the user
+                            auth.signOut().then(() => {
+                                stopTimer('Production');
+                                stopTimer('Break');
+                                prodElapsedTime = 0;
+                                breakElapsedTime = 0;
+                                currentActivity = 'none';
+                                startTime = null;
+                                localStorage.removeItem('prodElapsedTime');
+                                localStorage.removeItem('breakElapsedTime');
+                                localStorage.removeItem('currentActivity');
+                                localStorage.removeItem('startTime');
+                                displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
+                                displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
+                                document.getElementById('startTime').innerText = '';
+                                document.getElementById('endTime').innerText = '';
+
+                                console.log('User signed out successfully.');
+                                window.location.replace("signup.html");
+                            }).catch((error) => {
+                                console.error('Sign out error:', error);
+                            });
+                        })
+                        .catch(error => {
+                            console.error("Error sending data to Firestore:", error);
+                        });
+                }
+            }
         });
+
+
 
 
 
@@ -272,55 +323,75 @@
             event.preventDefault();
             const activity = document.getElementById('activity').value;
             startTime = new Date();
-            localStorage.setItem('startTime', startTime);
+            localStorage.setItem('startTime', startTime.toISOString());
             startTime = formatTime(startTime);
+            document.getElementById('endButton').disabled = false;
             if (activity !== 'none') {
                 currentActivity = activity;
                 localStorage.setItem('currentActivity', currentActivity);
                 startTimer(activity);
+
+                document.getElementById('endButton').disabled = false;
+                document.getElementById('activity').disabled = true;
+                document.getElementById('startButton').disabled = true;
             }
             document.getElementById('startTime').innerText = startTime;
             alert(`Start Time: ${startTime}`);
         });
-
         document.getElementById('endButton').addEventListener('click', (event) => {
             event.preventDefault();
-            var timeDiff;
+            endActivity();
+        });
+
+
+        function endActivity() {
+            let timeDiff;
             const endTime = new Date();
             const formattedEndTime = formatTime(endTime);
+            var sTime = document.getElementById('startTime').innerText;
+            console.log("HII" + sTime);
+            // startTime = formatTime(startTime);
             if (currentActivity !== 'none') {
                 stopTimer(currentActivity);
                 currentActivity = 'none';
                 localStorage.removeItem('currentActivity');
             }
             alert(`End Time: ${formattedEndTime}`);
+            alert(sTime);
             document.getElementById('endTime').innerText = formattedEndTime;
             if (startTime) {
-                timeDiff = calculateTimeDifference(startTime, formattedEndTime);
+                timeDiff = calculateTimeDifference(sTime, formattedEndTime);
                 alert(`Time Difference: ${timeDiff}`);
-                sendTimeToFirebase(startTime, formattedEndTime, timeDiff);
+                sendTimeToFirebase(sTime, formattedEndTime, timeDiff);
             } else {
                 console.error('Start time is not set');
             }
             localStorage.removeItem('startTime');
 
             var username = document.getElementById('loggedUserName').innerHTML;
-            var process = document.getElementById('activity').value;
+            var process = document.getElementById('loggedProcess').value;
             var employeeid = document.getElementById('loggedEmployeeId').innerHTML;
             var sTime = document.getElementById('startTime').innerText;
             var eTime = document.getElementById('endTime').innerText;
-
+            var a = document.getElementById('activity').value;
             console.log(username);
             console.log(process);
             console.log(employeeid);
             console.log(sTime);
             console.log(eTime);
             console.log(timeDiff);
-
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var formattedDate = year + '-' + month + '-' + day;
             const formData = new FormData();
+
+            formData.append('date', formattedDate);
             formData.append('username', username);
             formData.append('employeeid', employeeid);
             formData.append('process', process);
+            formData.append('activity', a);
             formData.append('start-time', sTime);
             formData.append('end-time', eTime);
             formData.append('duration', timeDiff);
@@ -335,7 +406,15 @@
                     }
                 })
                 .catch(error => console.error('Error sending data to Google Sheets:', error));
-        });
+
+            // Enable activity dropdown and start button
+            document.getElementById('activity').disabled = false;
+            document.getElementById('startButton').disabled = false;
+
+            // Disable end button
+            document.getElementById('endButton').disabled = true;
+        }
+
 
         document.getElementById('activity').addEventListener('change', (event) => {
             const selectedActivity = event.target.value;
@@ -348,16 +427,39 @@
             }
         });
 
-        window.onload = () => {
-            if (currentActivity !== 'none') {
-                startTimer(currentActivity);
+        // Restore state on page load
+        window.addEventListener('load', () => {
+            const savedActivity = localStorage.getItem('currentActivity');
+            const savedStartTime = localStorage.getItem('startTime');
+            if (savedActivity && savedStartTime) {
+                document.getElementById('activity').value = savedActivity;
+                document.getElementById('startTime').innerText = formatTime(new Date(savedStartTime));
+                startTime = new Date(savedStartTime);
+
+                // Disable activity dropdown and start button
+                document.getElementById('activity').disabled = true;
+                document.getElementById('startButton').disabled = true;
+
+                // Enable end button
+                document.getElementById('endButton').disabled = false;
+
+                // Display elapsed time on page load
+                if (savedActivity === 'Production') {
+                    displayTime(parseInt(localStorage.getItem('prodElapsedTime') || '0'), 'prod-timer-display', 'Production Time: ');
+                } else if (savedActivity.startsWith('Break')) {
+                    displayTime(parseInt(localStorage.getItem('breakElapsedTime') || '0'), 'break-timer-display', 'Break Time: ');
+                }
+
+                startTimer(savedActivity); // Start the timer again if activity was in progress
+            } else {
+                // Enable activity dropdown and start button
+                document.getElementById('activity').disabled = false;
+                document.getElementById('startButton').disabled = false;
+
+                // Disable end button
+                document.getElementById('endButton').disabled = true;
             }
-            if (startTime) {
-                document.getElementById('startTime').innerText = formatTime(new Date(startTime));
-            }
-            displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
-            displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
-        }
+        });
 
         async function fetchProductivityData() {
             const loggedInUserId = localStorage.getItem('loggedInUserId');
@@ -404,19 +506,14 @@
             const endMinutes = parseInt(endParts[1], 10);
             const endSeconds = parseInt(endParts[2], 10);
 
-            let minutesDiff = endMinutes - startMinutes;
-            let secondsDiff = endSeconds - startSeconds;
+            // Calculate the total start and end times in seconds
+            const totalStartSeconds = (startHours * 3600) + (startMinutes * 60) + startSeconds;
+            const totalEndSeconds = (endHours * 3600) + (endMinutes * 60) + endSeconds;
 
-            if (secondsDiff < 0) {
-                secondsDiff += 60;
-                minutesDiff--;
-            }
+            // Calculate the difference in seconds
+            const secondsDiff = totalEndSeconds - totalStartSeconds;
 
-            if (minutesDiff < 0) {
-                minutesDiff += 60;
-            }
-
-            return `${minutesDiff}:${String(secondsDiff).padStart(2, '0')}`
+            return secondsDiff / (60 * 60);
         }
 
         function setCurrentDate() {
@@ -430,6 +527,7 @@
 
         async function sendTimeToFirebase(start, end, timeDiff) {
             event.preventDefault();
+            console.log("Hii");
             const activity = document.getElementById("activity").value;
             const date = document.getElementById("currentDate").value;
             const loggedInUserId = localStorage.getItem('loggedInUserId');
@@ -453,26 +551,23 @@
 
                 const dailyRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
                 const dailyDoc = await getDoc(dailyRef);
-                const timeParts = timeDiff.split(':');
-                const minutes = parseInt(timeParts[0], 10);
-                const seconds = parseFloat(timeParts[1]);
-                const totalSeconds = (minutes * 60) + seconds;
+                const timeParts = timeDiff;
                 if (dailyDoc.exists()) {
                     const data = dailyDoc.data();
                     if (activity === 'Production') {
                         await updateDoc(dailyRef, {
-                            production: (data.production || 0) + totalSeconds
+                            production: (data.production || 0) + timeDiff
                         });
                     } else {
                         await updateDoc(dailyRef, {
-                            break: (data.break || 0) + totalSeconds
+                            break: (data.break || 0) + timeDiff
                         });
                     }
                 } else {
                     await setDoc(dailyRef, {
                         date: formattedDate,
-                        production: activity === 'Production' ? totalSeconds : 0,
-                        break: activity !== 'Production' ? totalSeconds : 0
+                        production: activity === 'Production' ? timeDiff : 0,
+                        break: activity !== 'Production' ? timeDiff : 0
                     });
                 }
 
@@ -512,8 +607,8 @@
                 const dailyDoc = await getDoc(dailyRef);
                 if (dailyDoc.exists()) {
                     const data = dailyDoc.data();
-                    const productionMinutes = data.production / (60 * 60); // Convert seconds to minutes
-                    const breakMinutes = data.break / (60 * 60); // Convert seconds to minutes
+                    const productionMinutes = data.production;  // Convert seconds to minutes
+                    const breakMinutes = data.break; // Convert seconds to minutes
                     productionData.push(productionMinutes);
                     breakData.push(breakMinutes);
                 } else {
@@ -533,27 +628,43 @@
                     labels: labels,
                     datasets: [
                         {
-                            label: 'Production Time (minutes)',
+                            label: 'Production Time (Hours)',
                             data: productionData,
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'purple',
+                            borderColor: 'purple',
                             borderWidth: 1
                         },
                         {
-                            label: 'Break Time (minutes)',
+                            label: 'Break Time (Hours)',
                             data: breakData,
-                            backgroundColor: 'rgba(192, 75, 75, 0.2)',
-                            borderColor: 'rgba(192, 75, 75, 1)',
+                            backgroundColor: 'red',
+                            borderColor: 'red',
                             borderWidth: 1
                         }
                     ]
                 },
                 options: {
+
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutBounce'
+                    },
                     scales: {
                         y: {
-                            beginAtZero: true
-                        }
+                            beginAtZero: true,
+                            grid: {
+                                display: false // Hide grid lines on y-axis
+                            }
+
+                        },
+                        x: {
+                            beginAtZero: true,
+                            grid: {
+                                display: false // Hide grid lines on x-axis
+                            }
+                        },
                     }
+
                 }
             });
         }
@@ -561,20 +672,12 @@
         // Call this function to create the chart
         createProductionChart();
 
+        function pieChart(prod, bre) {
+            let x = (prod / 9) * 100;
+            let y = (bre / 9) * 100;
 
-    </script>
-    <script>
-
-        function pieChart() {
-            let x = document.getElementById('prodToday').innerText;
-            let y = document.getElementById('breakToday').innerText;
-
-            console.log(x, y);
-
-            x = (x / 9) * 100;
-            y = (y / 9) * 100;
             const xValues = ["Productivity", "Break"];
-            const yValues = [35, 65];
+            const yValues = [x, y];
             const barColors = [
                 "#6F40A1",
                 "#50E4E4",
@@ -597,6 +700,10 @@
                 }
             });
         }
+
+    </script>
+    <script>
+
 
         function setCurrentDate() {
             var now = new Date();
