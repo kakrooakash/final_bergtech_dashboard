@@ -33,7 +33,27 @@
             </div>
             <div id="activity-card">
                 <form id="contact-form" method="post">
-                    <label for="activity">Select your activity:</label>
+                    <label for="activity">Select your process:</label>
+                    <select type="dropdown" name="curr-process" id="curr-process" class="form-control"
+                        placeholder="Process" required>
+                        <option value="none">Select Process</option>
+                        <option value="FlipkartK">MPQC:FK</option>
+                        <option value="Shopsy">MPQC:Shopsy</option>
+                        <option value="Upgrad">UPGRAD</option>
+                        <option value="Hitl">HITL</option>
+                        <option value="rqa">RQA</option>
+                        <option value="ugc">UGC</option>
+                        <option value="vsqa">V.SQA</option>
+                        <option value="vernac">Vernac</option>
+                        <option value="allen">Allen</option>
+                        <option value="counter">Counter feit</option>
+                        <option value="labelling">Labelling</option>
+                        <option value="rsqa">RSQA</option>
+                        <option value="st">Clear Trip</option>
+                        <option value="mis">MIS</option>
+                        <option value="others">Others</option>
+                    </select>
+                    <br><br>
                     <select type="dropdown" name="activity" id="activity" class="form-control" placeholder="Activity"
                         required>
                         <option value="none">Select Activity</option>
@@ -54,8 +74,6 @@
 
         <div class="output-column">
             <h2>Employee Productivity Dashboard</h2>
-            <!-- <h2>Employee Activity Dashboard <button onclick="pieChart()" class="refresh-btn"><i
-                        class="fa-solid fa-arrows-rotate"></i></button></h2> -->
             <ul id="activityData" hidden></ul>
             <input type="hidden" id="currentDate" name="currentDate">
             <input type="hidden" id="timeDifference" name="timeDifference">
@@ -70,11 +88,17 @@
             <div id="graphical-data">
                 <div class="chart">
                     <canvas id="myChart" class="myChart"></canvas>
+
+                </div>
+                <div class="chart">
+                    <canvas id="myCharttwo" class="myChart"></canvas>
+
                 </div>
                 <div class="graph-data">
                     <div><span id="prodToday" name="prodToday" hidden></span></div>
                     <div><span id="breToday" name="breToday" hidden></span></div>
                 </div>
+
             </div>
             <div class="chart-two">
                 <canvas id="productionChart" width="400" height="250"></canvas>
@@ -128,7 +152,21 @@
         let currentActivity = localStorage.getItem('currentActivity') || 'none';
         let startTime = localStorage.getItem('startTime') ? new Date(localStorage.getItem('startTime')) : null;
 
-
+        let mpqcfk = 0;
+        let mpqcsho = 0;
+        let upgrad = 0;
+        let hitl = 0;
+        let rqa = 0;
+        let ugc = 0;
+        let vsqa = 0;
+        let allen = 0;
+        let counter = 0;
+        let labelling = 0;
+        let rsqa = 0;
+        let st = 0;
+        let vernac = 0;
+        let mis = 0;
+        let others = 0;
 
         onAuthStateChanged(auth, (user) => {
             const loggedInUserId = localStorage.getItem('loggedInUserId');
@@ -148,6 +186,86 @@
                     })
             }
         });
+
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const loggedInUserId = localStorage.getItem('loggedInUserId');
+            const colRef = collection(db, "EmployeeActivity", loggedInUserId, "activity");
+            getDocs(colRef)
+                .then((querySnapshot) => {
+                    const ul = document.getElementById("activityData");
+                    querySnapshot.forEach((doc) => {
+                        const activityData = doc.data();
+                        const activity = activityData.activity;
+                        const difference = activityData.difference;
+                        const date = activityData.date;
+                        const process = activityData.process;
+
+                        var now = new Date();
+                        var year = now.getFullYear();
+                        var month = String(now.getMonth() + 1).padStart(2, '0');
+                        var day = String(now.getDate()).padStart(2, '0');
+                        var formattedDate = year + '-' + month + '-' + day;
+
+                        if (formattedDate == date && activity == "Production" && process == "Upgrad") {
+                            upgrad += parseFloat(difference, 10);
+                        }
+                        else if (formattedDate == date && activity == "Production" && process == "FlipkartK") {
+                            mpqcfk += parseFloat(difference, 10);
+                        }
+                        else if (formattedDate == date && activity == "Production" && process == "Shopsy") {
+                            mpqcsho += parseFloat(difference, 10);
+                        }
+                        else if (formattedDate == date && activity == "Production" && process == "Hitl") {
+                            hitl += parseFloat(difference, 10);
+                        }
+                        else if (formattedDate == date && activity == "Production" && process == "rqa") {
+                            rqa += parseFloat(difference, 10);
+                        }
+
+                        else if (formattedDate == date && activity == "Production" && process == "ugc") {
+                            ugc += parseFloat(difference, 10);
+                        }
+                        else if (formattedDate == date && activity == "Production" && process == "vsqa") {
+                            vsqa += parseFloat(difference, 10);
+                        }
+                        else if (formattedDate == date && activity == "Production" && process == "vernac") {
+                            vernac += parseFloat(difference, 10);
+                        }
+                        else if (formattedDate == date && activity == "Production" && process == "allen") {
+                            allen += parseFloat(difference, 10);
+                        }
+                        else if (formattedDate == date && activity == "Production" && process == "counter") {
+                            counter += parseFloat(difference, 10);
+                        }
+                        else if (formattedDate == date && activity == "Production" && process == "labelling") {
+                            labelling += parseFloat(difference, 10);
+                        }
+                        else if (formattedDate == date && activity == "Production" && process == "rsqa") {
+                            rsqa += parseFloat(difference, 10);
+                        }
+                        else if (formattedDate == date && activity == "Production" && process == "st") {
+                            st += parseFloat(difference, 10);
+                        }
+                        else if (formattedDate == date && activity == "Production" && process == "mis") {
+                            mis += parseFloat(difference, 10);
+                        }
+                        else if (formattedDate == date && activity == "Production" && process == "others") {
+                            others += parseFloat(difference, 10);
+                        }
+                        else {
+                            console.log("No data found!");
+                        }
+                    });
+
+                    pieChart2(upgrad, mpqcsho, mpqcfk, hitl, rqa, ugc, vsqa, vernac, allen, counter, labelling, rsqa, st, mis, others);
+                })
+                .catch((error) => {
+                    console.error("Error getting documents: ", error);
+                });
+        });
+
+
 
         document.addEventListener('DOMContentLoaded', (event) => {
             const loggedInUserId = localStorage.getItem('loggedInUserId');
@@ -221,8 +339,8 @@
                                 formData.append('username', username);
                                 formData.append('employeeid', employeeid);
                                 formData.append('process', process);
-                                formData.append('production', prod);
-                                formData.append('break', bre);
+                                formData.append('production', prod / (60 * 60));
+                                formData.append('break', bre / (60 * 60));
                                 return fetch(scriptURL2, { method: 'POST', body: formData });
                             } else {
                                 throw new Error("No document found");
@@ -250,7 +368,7 @@
                             document.getElementById('endTime').innerText = '';
 
                             console.log('User signed out successfully.');
-                            window.location.replace("signup.html");
+                            window.location.replace("index.html");
                         })
                         .catch(error => {
                             console.error("Error during sign-out process:", error);
@@ -325,6 +443,7 @@
 
                 document.getElementById('endButton').disabled = false;
                 document.getElementById('activity').disabled = true;
+                document.getElementById('curr-process').disabled = true;
                 document.getElementById('startButton').disabled = true;
             }
             document.getElementById('startTime').innerText = startTime;
@@ -341,6 +460,7 @@
             const endTime = new Date();
             const formattedEndTime = formatTime(endTime);
             var sTime = document.getElementById('startTime').innerText;
+            const proc = document.getElementById('curr-process').value;
             console.log("HII" + sTime);
             // startTime = formatTime(startTime);
             if (currentActivity !== 'none') {
@@ -361,7 +481,7 @@
             localStorage.removeItem('startTime');
 
             var username = document.getElementById('loggedUserName').innerHTML;
-            var process = document.getElementById('loggedProcess').innerHTML;
+            // var process = document.getElementById('loggedProcess').innerHTML;
             var employeeid = document.getElementById('loggedEmployeeId').innerHTML;
             var sTime = document.getElementById('startTime').innerText;
             var eTime = document.getElementById('endTime').innerText;
@@ -382,11 +502,11 @@
             formData.append('date', formattedDate);
             formData.append('username', username);
             formData.append('employeeid', employeeid);
-            formData.append('process', process);
+            formData.append('process', proc);
             formData.append('activity', a);
             formData.append('start-time', sTime);
             formData.append('end-time', eTime);
-            formData.append('duration', timeDiff);
+            formData.append('duration', timeDiff / (60 * 60));
 
             fetch(scriptURL, { method: 'POST', body: formData })
                 .then(response => {
@@ -402,6 +522,7 @@
             // Enable activity dropdown and start button
             document.getElementById('activity').disabled = false;
             document.getElementById('startButton').disabled = false;
+            document.getElementById('curr-process').disabled = false;
 
             // Disable end button
             document.getElementById('endButton').disabled = true;
@@ -452,38 +573,6 @@
             }
         });
 
-        // window.addEventListener('load', () => {
-        //     const savedActivity = localStorage.getItem('currentActivity');
-        //     const savedStartTime = localStorage.getItem('startTime');
-        //     if (savedActivity && savedStartTime) {
-        //         document.getElementById('activity').value = savedActivity;
-        //         document.getElementById('startTime').innerText = formatTime(new Date(savedStartTime));
-        //         startTime = new Date(savedStartTime);
-
-        //         // Disable activity dropdown and start button
-        //         document.getElementById('activity').disabled = true;
-        //         document.getElementById('startButton').disabled = true;
-
-        //         // Enable end button
-        //         document.getElementById('endButton').disabled = false;
-
-        //         // Display elapsed time on page load
-        //         if (savedActivity === 'Production') {
-        //             displayTime(parseInt(localStorage.getItem('prodElapsedTime') || '0'), 'prod-timer', 'Production Time: ');
-        //         } else if (savedActivity.startsWith('Break')) {
-        //             displayTime(parseInt(localStorage.getItem('breakElapsedTime') || '0'), 'break-timer', 'Break Time: ');
-        //         }
-
-        //         startTimer(savedActivity); // Start the timer again if activity was in progress
-        //     } else {
-        //         // Enable activity dropdown and start button
-        //         document.getElementById('activity').disabled = false;
-        //         document.getElementById('startButton').disabled = false;
-
-        //         // Disable end button
-        //         document.getElementById('endButton').disabled = true;
-        //     }
-        // });
 
         async function fetchProductivityData() {
             const loggedInUserId = localStorage.getItem('loggedInUserId');
@@ -560,6 +649,7 @@
             const date = document.getElementById("currentDate").value;
             const loggedInUserId = localStorage.getItem('loggedInUserId');
             const name = document.getElementById('loggedUserName');
+            const proc = document.getElementById('curr-process').value;
             var now = new Date();
             var year = now.getFullYear();
             var month = String(now.getMonth() + 1).padStart(2, '0');
@@ -570,6 +660,7 @@
                 // Set data
                 await addDoc(docRef, {
                     date: formattedDate,
+                    process: proc,
                     activity: activity,
                     uid: loggedInUserId,
                     difference: timeDiff,
@@ -701,8 +792,9 @@
         createProductionChart();
 
         function pieChart(prod, bre) {
-            let x = (((prod) / (60 * 60)) / 9) * 100;
-            let y = (((bre) / (60 * 60)) / 9) * 100;
+            let x = (prod / (60 * 60));
+            let y = (bre / (60 * 60));
+
 
             const xValues = ["Productivity", "Break"];
             const yValues = [x, y];
@@ -729,6 +821,41 @@
             });
         }
 
+        function pieChart2(upgrad, shopsy, mpqcfk, hitl, rqa, ugc, vsqa, vernac, allen, counter, labelling, rsqa, st, mis, others) {
+            let x = (upgrad) / (60 * 60);
+            let y = (shopsy) / (60 * 60);
+            let z = (mpqcfk) / (60 * 60);
+            let p = (hitl) / (60 * 60);
+            let a = (ugc) / (60 * 60);
+
+            // const xValues = ["Upgrad", "Shopsy", "Flipkart", "HITL","UGC"];
+            const yValues = [x, y, z, p, a];
+            const barColors = [
+                "#6F40A1",
+                "#50E4E4",
+                "pink",
+                "red",
+                "black"
+            ];
+
+            new Chart("myCharttwo", {
+                type: "pie",
+                data: {
+                    labels: ["Upgrad", "Shopsy", "Flipkart", "HITL", "UGC"],
+                    datasets: [{
+                        backgroundColor: barColors,
+                        data: yValues
+                    }]
+                },
+                options: {
+                    title: {
+                        display: true,
+                        text: "Productivity and Break"
+                    }
+                }
+            });
+
+        }
     </script>
     <script>
 

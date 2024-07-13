@@ -58,7 +58,7 @@ body {
 .container {
     /* margin-top: 30px; */
     display: flex;
-    height: 565px;
+    height: 820px;
     min-width: 100%;
     background-color: black;
     border-color: black;
@@ -198,9 +198,7 @@ button:hover {
 
 .line {
     border-bottom: 3px dotted black;
-
     margin-top: 20px;
-
 }
 
 
@@ -263,7 +261,8 @@ button:hover {
     box-shadow:  -20px -20px 81px #d6d0e0,
                  20px 20px 81px #f2eafc;
     margin-top: 30px;
-    float: right;
+    margin-left: 30px;
+    float: left;
     width: 500px;
     padding: 20px;
     height: 295px;
@@ -292,20 +291,20 @@ button:hover {
     /* box-shadow: 0 4px 15px rgba(0, 0, 0, 0.588); */
 }
 
-#myChart {
-    size: 20px;
-}
+
 
 .chart{
-    border-radius: 20px;
-    background: #e0e0e0;
-    box-shadow: 22px 22px 67px #bebebe,  -22px -22px 67px #ffffff;
+   border-radius: 20px;
+   background: #e0e0e0;
+   box-shadow: 22px 22px 67px #bebebe,  -22px -22px 67px #ffffff;
    margin-top: 30px;
    height: 300px;
    padding: 20px;
+   margin-left: 30px;
 }
 
 .output-column{
     text-align: center;
     background-color:white;
 }
+
