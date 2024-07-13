@@ -16,6 +16,7 @@
             <ul>
                 <li id="prod-timer">Production Time: 00:00:00</li>
                 <li id="break-timer">Break Time: 00:00:00</li>
+                <button id="updateButton">Update Shift Timings</button>
                 <button id="sign-out" class="signout">Sign Out</button>
             </ul>
         </nav>
@@ -29,6 +30,7 @@
                 <div>Email: <span id="loggedEmailId" name="loggedEmailId"></span></div>
                 <div>Employee Id: <span id="loggedEmployeeId" name="loggedEmployeeId"></span></div>
                 <div>Process: <span id="loggedProcess" name="loggedProcess"></span></div>
+                <div>Timing: <span id="loggedShift" name="loggedProcess"></span></div>
                 <br>
             </div>
             <div id="activity-card">
@@ -84,7 +86,6 @@
             <input type="hidden" id="endTime" name="endTime">
             <input type="hidden" id="currentDate" name="currentDate">
 
-
             <div id="graphical-data">
                 <div class="chart">
                     <canvas id="myChart" class="myChart"></canvas>
@@ -132,6 +133,7 @@
         const db = getFirestore(app);
 
 
+
         let endTime;
 
         let productionTotal = 0;
@@ -151,6 +153,12 @@
         let breakElapsedTime = localStorage.getItem('breakElapsedTime') ? parseInt(localStorage.getItem('breakElapsedTime')) : 0;
         let currentActivity = localStorage.getItem('currentActivity') || 'none';
         let startTime = localStorage.getItem('startTime') ? new Date(localStorage.getItem('startTime')) : null;
+        let lastUpdateTime = localStorage.getItem('lastUpdateTime') ? new Date(localStorage.getItem('lastUpdateTime')) : null;
+        const x = document.getElementById('loggedShift').innerText;
+        if (x == "9AM - 6PM") {
+            console.log("Hiii");
+        }
+        console.log(x);
 
         let mpqcfk = 0;
         let mpqcsho = 0;
@@ -180,13 +188,13 @@
                             document.getElementById('loggedEmailId').innerText = userData.email;
                             document.getElementById('loggedEmployeeId').innerText = userData.employeeid;
                             document.getElementById('loggedProcess').innerText = userData.process;
+                            document.getElementById('loggedShift').innerText = userData.timings;
                         } else {
                             console.log("No document found");
                         }
                     })
             }
         });
-
 
         document.addEventListener('DOMContentLoaded', (event) => {
             const loggedInUserId = localStorage.getItem('loggedInUserId');
@@ -301,6 +309,7 @@
                             console.log("No data found!");
                         }
                     });
+
                     console.log(productionTotal, breakTotal);
                     pieChart(productionTotal, breakTotal);
                 })
@@ -333,7 +342,6 @@
                                 const userData = docsnap.data();
                                 prod = userData.production;
                                 bre = userData.break;
-
                                 const formData = new FormData();
                                 formData.append('date', formattedDate);
                                 formData.append('username', username);
@@ -380,36 +388,42 @@
 
 
 
-
         function startTimer(activity) {
             function updateTimer() {
-                // const now = new Date();
-                // const elapsed = now - startTime;
+                const now = new Date();
+                const elapsed = now - lastUpdateTime;
+                lastUpdateTime = now;
+                localStorage.setItem('lastUpdateTime', lastUpdateTime.toISOString());
+
                 if (activity === 'Production') {
-                    prodElapsedTime += 1000; // increment by 1 second
+                    prodElapsedTime += elapsed;
                     localStorage.setItem('prodElapsedTime', prodElapsedTime);
                     displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
                 } else if (activity.startsWith('Break')) {
-                    breakElapsedTime += 1000; // increment by 1 second
+                    breakElapsedTime += elapsed;
                     localStorage.setItem('breakElapsedTime', breakElapsedTime);
                     displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
+                }
+
+                if (currentActivity === activity) {
+                    requestAnimationFrame(updateTimer);
                 }
             }
 
             if (activity === 'Production') {
                 clearInterval(prodInterval);
-                prodInterval = setInterval(updateTimer, 1000);
+                prodInterval = requestAnimationFrame(updateTimer);
             } else if (activity.startsWith('Break')) {
                 clearInterval(breakInterval);
-                breakInterval = setInterval(updateTimer, 1000);
+                breakInterval = requestAnimationFrame(updateTimer);
             }
         }
 
         function stopTimer(activity) {
             if (activity === 'Production') {
-                clearInterval(prodInterval);
+                cancelAnimationFrame(prodInterval);
             } else if (activity.startsWith('Break')) {
-                clearInterval(breakInterval);
+                cancelAnimationFrame(breakInterval);
             }
         }
 
@@ -433,8 +447,10 @@
             event.preventDefault();
             const activity = document.getElementById('activity').value;
             startTime = new Date();
+            lastUpdateTime = startTime;
             localStorage.setItem('startTime', startTime.toISOString());
-            startTime = formatTime(startTime);
+            localStorage.setItem('lastUpdateTime', lastUpdateTime.toISOString());
+
             document.getElementById('endButton').disabled = false;
             if (activity !== 'none') {
                 currentActivity = activity;
@@ -446,9 +462,10 @@
                 document.getElementById('curr-process').disabled = true;
                 document.getElementById('startButton').disabled = true;
             }
-            document.getElementById('startTime').innerText = startTime;
-            alert(`Start Time: ${startTime}`);
+            document.getElementById('startTime').innerText = startTime.toLocaleTimeString();
+            alert(`Start Time: ${startTime.toLocaleTimeString()}`);
         });
+
         document.getElementById('endButton').addEventListener('click', (event) => {
             event.preventDefault();
             endActivity();
@@ -472,13 +489,15 @@
             alert(sTime);
             document.getElementById('endTime').innerText = formattedEndTime;
             if (startTime) {
-                timeDiff = calculateTimeDifference(sTime, formattedEndTime);
+                timeDiff = endTime - new Date(startTime);
+                // timeDiff = calculateTimeDifference(sTime, formattedEndTime);
                 alert(`Time Difference: ${timeDiff}`);
                 sendTimeToFirebase(sTime, formattedEndTime, timeDiff);
             } else {
                 console.error('Start time is not set');
             }
             localStorage.removeItem('startTime');
+            localStorage.removeItem('lastUpdateTime');
 
             var username = document.getElementById('loggedUserName').innerHTML;
             // var process = document.getElementById('loggedProcess').innerHTML;
@@ -540,36 +559,30 @@
             }
         });
 
+        // document.addEventListener('visibilitychange', () => {
+        //     if (document.visibilityState === 'visible' && currentActivity !== 'none') {
+        //         lastUpdateTime = new Date();
+        //         localStorage.setItem('lastUpdateTime', lastUpdateTime.toISOString());
+        //     }
+        // });
+
         // Restore state on page load
         window.addEventListener('load', () => {
-            const savedActivity = localStorage.getItem('currentActivity');
-            const savedStartTime = localStorage.getItem('startTime');
+            if (currentActivity !== 'none' && startTime) {
+                const now = new Date();
+                const elapsed = now - new Date(lastUpdateTime);
+                lastUpdateTime = now;
+                localStorage.setItem('lastUpdateTime', lastUpdateTime.toISOString());
 
-            // Display the saved elapsed times for both activities
-            displayTime(parseInt(localStorage.getItem('prodElapsedTime') || '0'), 'prod-timer', 'Production Time: ');
-            displayTime(parseInt(localStorage.getItem('breakElapsedTime') || '0'), 'break-timer', 'Break Time: ');
-
-            if (savedActivity && savedStartTime) {
-                document.getElementById('activity').value = savedActivity;
-                document.getElementById('startTime').innerText = formatTime(new Date(savedStartTime));
-                startTime = new Date(savedStartTime);
-
-                // Disable activity dropdown and start button
-                document.getElementById('activity').disabled = true;
-                document.getElementById('startButton').disabled = true;
-
-                // Enable end button
-                document.getElementById('endButton').disabled = false;
-
-                // Start the timer again if activity was in progress
-                startTimer(savedActivity);
-            } else {
-                // Enable activity dropdown and start button
-                document.getElementById('activity').disabled = false;
-                document.getElementById('startButton').disabled = false;
-
-                // Disable end button
-                document.getElementById('endButton').disabled = true;
+                if (currentActivity === 'Production') {
+                    prodElapsedTime += elapsed;
+                    localStorage.setItem('prodElapsedTime', prodElapsedTime);
+                    startTimer('Production');
+                } else if (currentActivity.startsWith('Break')) {
+                    breakElapsedTime += elapsed;
+                    localStorage.setItem('breakElapsedTime', breakElapsedTime);
+                    startTimer('Break');
+                }
             }
         });
 
