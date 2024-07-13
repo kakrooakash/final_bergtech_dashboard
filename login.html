@@ -81,7 +81,7 @@
                     alert("User LoggedIn!")
                     const user = userCredential.user;
                     localStorage.setItem('loggedInUserId', user.uid);
-                    window.location.replace("index.html");
+                    window.location.replace("homepage.html");
 
                 }).catch((error) => {
                     const errorCode = error.code;

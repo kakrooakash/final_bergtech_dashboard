@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+    <link rel="stylesheet" href="homepage.css">
+    <script src="https://kit.fontawesome.com/bdedc8c31a.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <header>
+        <img src="Images/berg.png" alt="Logo">
+        <nav>
+            <ul>
+                <li id="prod-timer">Production Time: 00:00:00</li>
+                <li id="break-timer">Break Time: 00:00:00</li>
+                <button id="sign-out" class="signout">Sign Out</button>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="form-column">
+            <div id="profile-card">
+                <h2>Employee Profile</h2>
+                <div>Employee Name: <span id="loggedUserName" name="loggedUserName"></span></div>
+                <div>Email: <span id="loggedEmailId" name="loggedEmailId"></span></div>
+                <div>Employee Id: <span id="loggedEmployeeId" name="loggedEmployeeId"></span></div>
+                <div>Process: <span id="loggedProcess" name="loggedProcess"></span></div>
+                <br>
+            </div>
+            <div id="activity-card">
+                <form id="contact-form" method="post">
+                    <label for="activity">Select your activity:</label>
+                    <select type="dropdown" name="activity" id="activity" class="form-control" placeholder="Activity"
+                        required>
+                        <option value="none">Select Activity</option>
+                        <option value="Production">Production</option>
+                        <option value="Break">Tea Break</option>
+                        <option value="Break">Bio Break</option>
+                        <option value="Break">Lunch Break</option>
+                        <option value="Production">Training</option>
+                    </select>
+                    <div class="buttons">
+                        <button id="startButton" class="buttontimmer">Start</button>
+                        <button id="endButton" class="buttontimmer" onclick="setCurrentDate()">End</button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+
+        <div class="output-column">
+            <h2>Employee Productivity Dashboard</h2>
+            <!-- <h2>Employee Activity Dashboard <button onclick="pieChart()" class="refresh-btn"><i
+                        class="fa-solid fa-arrows-rotate"></i></button></h2> -->
+            <ul id="activityData" hidden></ul>
+            <input type="hidden" id="currentDate" name="currentDate">
+            <input type="hidden" id="timeDifference" name="timeDifference">
+            <input type="hidden" id="id" name="id">
+            <input type="hidden" id="name" name="name">
+            <input type="hidden" id="process" name="process">
+            <input type="hidden" id="startTime" name="startTime">
+            <input type="hidden" id="endTime" name="endTime">
+            <input type="hidden" id="currentDate" name="currentDate">
+
+
+            <div id="graphical-data">
+                <div class="chart">
+                    <canvas id="myChart" class="myChart"></canvas>
+                </div>
+                <div class="graph-data">
+                    <div><span id="prodToday" name="prodToday" hidden></span></div>
+                    <div><span id="breToday" name="breToday" hidden></span></div>
+                </div>
+            </div>
+            <div class="chart-two">
+                <canvas id="productionChart" width="400" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="currentTime.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    <script type="module">
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+        import { getFirestore, getDoc, updateDoc, doc, query, where, setDoc, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVMhk4-La8nK63C6rsphn16CPWIrmFbmA",
+            authDomain: "final-project-8c053.firebaseapp.com",
+            projectId: "final-project-8c053",
+            storageBucket: "final-project-8c053.appspot.com",
+            messagingSenderId: "881972436006",
+            appId: "1:881972436006:web:c1df7ce089a267118edae7"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
+        const db = getFirestore(app);
+
+
+        let endTime;
+
+        let productionTotal = 0;
+        let breakTotal = 0;
+
+        let prodStartTime;
+        let breakStartTime;
+
+        let prodInterval;
+        let breakInterval;
+
+        const scriptURL2 = "https://script.google.com/macros/s/AKfycbxpLNJAItDqub4ohM31JsYNPHnA5oHe8u2Eq25WsXYdyEgZJVkiPrzzuTmIYQIfG8HSmQ/exec";
+        const scriptURL = 'https://script.google.com/macros/s/AKfycby_-Sg6pPeZC833QU_dM8bH7tSAvQngjz5c0iJlBo-I-cWNdN8BNaU_3WrXfS-gPm7M5g/exec';
+        const form = document.forms['contact-form'];
+
+        let prodElapsedTime = localStorage.getItem('prodElapsedTime') ? parseInt(localStorage.getItem('prodElapsedTime')) : 0;
+        let breakElapsedTime = localStorage.getItem('breakElapsedTime') ? parseInt(localStorage.getItem('breakElapsedTime')) : 0;
+        let currentActivity = localStorage.getItem('currentActivity') || 'none';
+        let startTime = localStorage.getItem('startTime') ? new Date(localStorage.getItem('startTime')) : null;
+
+
+
+        onAuthStateChanged(auth, (user) => {
+            const loggedInUserId = localStorage.getItem('loggedInUserId');
+            if (loggedInUserId) {
+                const docRef = doc(db, "users", loggedInUserId);
+                getDoc(docRef)
+                    .then((docsnap) => {
+                        if (docsnap.exists()) {
+                            const userData = docsnap.data();
+                            document.getElementById('loggedUserName').innerText = userData.username;
+                            document.getElementById('loggedEmailId').innerText = userData.email;
+                            document.getElementById('loggedEmployeeId').innerText = userData.employeeid;
+                            document.getElementById('loggedProcess').innerText = userData.process;
+                        } else {
+                            console.log("No document found");
+                        }
+                    })
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const loggedInUserId = localStorage.getItem('loggedInUserId');
+            const colRef = collection(db, "EmployeeActivity", loggedInUserId, "activity");
+            getDocs(colRef)
+                .then((querySnapshot) => {
+                    const ul = document.getElementById("activityData");
+                    querySnapshot.forEach((doc) => {
+                        const activityData = doc.data();
+                        const activity = activityData.activity;
+                        const difference = activityData.difference;
+                        const date = activityData.date;
+                        console.log(activity, difference, date);
+                        var now = new Date();
+                        var year = now.getFullYear();
+                        var month = String(now.getMonth() + 1).padStart(2, '0');
+                        var day = String(now.getDate()).padStart(2, '0');
+                        var formattedDate = year + '-' + month + '-' + day;
+                        console.log(formattedDate);
+                        if (formattedDate == date) {
+                            if (activity == "Production") {
+                                productionTotal += parseFloat(difference, 10);
+                            }
+                            if (activity == "Break") {
+                                breakTotal += parseFloat(difference, 10);
+                            }
+                            const li = document.createElement("li");
+                            li.innerText = `${activity} : ${parseInt(difference, 10)} min`;
+                            li.id = doc.id;
+                            ul.appendChild(li);
+                        }
+                        else {
+                            console.log("No data found!");
+                        }
+                    });
+                    console.log(productionTotal, breakTotal);
+                    pieChart(productionTotal, breakTotal);
+                })
+                .catch((error) => {
+                    console.error("Error getting documents: ", error);
+                });
+        });
+
+        document.getElementById('sign-out').addEventListener('click', () => {
+            var username = document.getElementById('loggedUserName').innerHTML;
+            var employeeid = document.getElementById('loggedEmployeeId').innerHTML;
+            var process = document.getElementById('loggedProcess').innerHTML;
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var formattedDate = year + '-' + month + '-' + day;
+            const loggedInUserId = localStorage.getItem('loggedInUserId');
+
+            console.log(username, employeeid, process);
+            var prod;
+            var bre;
+            const userConfirmed = confirm('Are you sure you want to sign out? \nYour production data will be submitted.');
+            if (userConfirmed) {
+                if (loggedInUserId) {
+                    const docRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
+                    getDoc(docRef)
+                        .then((docsnap) => {
+                            if (docsnap.exists()) {
+                                const userData = docsnap.data();
+                                prod = userData.production;
+                                bre = userData.break;
+
+                                const formData = new FormData();
+                                formData.append('date', formattedDate);
+                                formData.append('username', username);
+                                formData.append('employeeid', employeeid);
+                                formData.append('process', process);
+                                formData.append('production', prod);
+                                formData.append('break', bre);
+                                return fetch(scriptURL2, { method: 'POST', body: formData });
+                            } else {
+                                throw new Error("No document found");
+                            }
+                        })
+                        .then(() => {
+                            console.log("Data sent to Firestore successfully.");
+                            // Sign out the user
+                            return auth.signOut();
+                        })
+                        .then(() => {
+                            stopTimer('Production');
+                            stopTimer('Break');
+                            prodElapsedTime = 0;
+                            breakElapsedTime = 0;
+                            currentActivity = 'none';
+                            startTime = null;
+                            localStorage.removeItem('prodElapsedTime');
+                            localStorage.removeItem('breakElapsedTime');
+                            localStorage.removeItem('currentActivity');
+                            localStorage.removeItem('startTime');
+                            displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
+                            displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
+                            document.getElementById('startTime').innerText = '';
+                            document.getElementById('endTime').innerText = '';
+
+                            console.log('User signed out successfully.');
+                            window.location.replace("signup.html");
+                        })
+                        .catch(error => {
+                            console.error("Error during sign-out process:", error);
+                        });
+                }
+            }
+        });
+
+
+
+
+
+        function startTimer(activity) {
+            function updateTimer() {
+                // const now = new Date();
+                // const elapsed = now - startTime;
+                if (activity === 'Production') {
+                    prodElapsedTime += 1000; // increment by 1 second
+                    localStorage.setItem('prodElapsedTime', prodElapsedTime);
+                    displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
+                } else if (activity.startsWith('Break')) {
+                    breakElapsedTime += 1000; // increment by 1 second
+                    localStorage.setItem('breakElapsedTime', breakElapsedTime);
+                    displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
+                }
+            }
+
+            if (activity === 'Production') {
+                clearInterval(prodInterval);
+                prodInterval = setInterval(updateTimer, 1000);
+            } else if (activity.startsWith('Break')) {
+                clearInterval(breakInterval);
+                breakInterval = setInterval(updateTimer, 1000);
+            }
+        }
+
+        function stopTimer(activity) {
+            if (activity === 'Production') {
+                clearInterval(prodInterval);
+            } else if (activity.startsWith('Break')) {
+                clearInterval(breakInterval);
+            }
+        }
+
+        function displayTime(milliseconds, elementId, prefix) {
+            const totalSeconds = Math.floor(milliseconds / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            const element = document.getElementById(elementId);
+            element.textContent = `${prefix} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            if (elementId === 'break-timer' && hours >= 1) {
+                element.style.color = 'red';
+            } else {
+                element.style.color = ''; // Reset to default color
+            }
+        }
+
+        document.getElementById('startButton').addEventListener('click', (event) => {
+            event.preventDefault();
+            const activity = document.getElementById('activity').value;
+            startTime = new Date();
+            localStorage.setItem('startTime', startTime.toISOString());
+            startTime = formatTime(startTime);
+            document.getElementById('endButton').disabled = false;
+            if (activity !== 'none') {
+                currentActivity = activity;
+                localStorage.setItem('currentActivity', currentActivity);
+                startTimer(activity);
+
+                document.getElementById('endButton').disabled = false;
+                document.getElementById('activity').disabled = true;
+                document.getElementById('startButton').disabled = true;
+            }
+            document.getElementById('startTime').innerText = startTime;
+            alert(`Start Time: ${startTime}`);
+        });
+        document.getElementById('endButton').addEventListener('click', (event) => {
+            event.preventDefault();
+            endActivity();
+        });
+
+
+        function endActivity() {
+            let timeDiff;
+            const endTime = new Date();
+            const formattedEndTime = formatTime(endTime);
+            var sTime = document.getElementById('startTime').innerText;
+            console.log("HII" + sTime);
+            // startTime = formatTime(startTime);
+            if (currentActivity !== 'none') {
+                stopTimer(currentActivity);
+                currentActivity = 'none';
+                localStorage.removeItem('currentActivity');
+            }
+            alert(`End Time: ${formattedEndTime}`);
+            alert(sTime);
+            document.getElementById('endTime').innerText = formattedEndTime;
+            if (startTime) {
+                timeDiff = calculateTimeDifference(sTime, formattedEndTime);
+                alert(`Time Difference: ${timeDiff}`);
+                sendTimeToFirebase(sTime, formattedEndTime, timeDiff);
+            } else {
+                console.error('Start time is not set');
+            }
+            localStorage.removeItem('startTime');
+
+            var username = document.getElementById('loggedUserName').innerHTML;
+            var process = document.getElementById('loggedProcess').innerHTML;
+            var employeeid = document.getElementById('loggedEmployeeId').innerHTML;
+            var sTime = document.getElementById('startTime').innerText;
+            var eTime = document.getElementById('endTime').innerText;
+            var a = document.getElementById('activity').value;
+            console.log(username);
+            console.log(process);
+            console.log(employeeid);
+            console.log(sTime);
+            console.log(eTime);
+            console.log(timeDiff);
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var formattedDate = year + '-' + month + '-' + day;
+            const formData = new FormData();
+
+            formData.append('date', formattedDate);
+            formData.append('username', username);
+            formData.append('employeeid', employeeid);
+            formData.append('process', process);
+            formData.append('activity', a);
+            formData.append('start-time', sTime);
+            formData.append('end-time', eTime);
+            formData.append('duration', timeDiff);
+
+            fetch(scriptURL, { method: 'POST', body: formData })
+                .then(response => {
+                    if (response.ok) {
+                        alert("Data sent to Google Sheets successfully.");
+                        // Optionally reload or perform other actions after success
+                    } else {
+                        throw new Error('Failed to send data to Google Sheets.');
+                    }
+                })
+                .catch(error => console.error('Error sending data to Google Sheets:', error));
+
+            // Enable activity dropdown and start button
+            document.getElementById('activity').disabled = false;
+            document.getElementById('startButton').disabled = false;
+
+            // Disable end button
+            document.getElementById('endButton').disabled = true;
+        }
+
+
+        document.getElementById('activity').addEventListener('change', (event) => {
+            const selectedActivity = event.target.value;
+            if (selectedActivity !== 'none' && selectedActivity !== currentActivity) {
+                if (currentActivity !== 'none') {
+                    stopTimer(currentActivity);
+                }
+                currentActivity = selectedActivity;
+                localStorage.setItem('currentActivity', currentActivity);
+            }
+        });
+
+        // Restore state on page load
+        window.addEventListener('load', () => {
+            const savedActivity = localStorage.getItem('currentActivity');
+            const savedStartTime = localStorage.getItem('startTime');
+
+            // Display the saved elapsed times for both activities
+            displayTime(parseInt(localStorage.getItem('prodElapsedTime') || '0'), 'prod-timer', 'Production Time: ');
+            displayTime(parseInt(localStorage.getItem('breakElapsedTime') || '0'), 'break-timer', 'Break Time: ');
+
+            if (savedActivity && savedStartTime) {
+                document.getElementById('activity').value = savedActivity;
+                document.getElementById('startTime').innerText = formatTime(new Date(savedStartTime));
+                startTime = new Date(savedStartTime);
+
+                // Disable activity dropdown and start button
+                document.getElementById('activity').disabled = true;
+                document.getElementById('startButton').disabled = true;
+
+                // Enable end button
+                document.getElementById('endButton').disabled = false;
+
+                // Start the timer again if activity was in progress
+                startTimer(savedActivity);
+            } else {
+                // Enable activity dropdown and start button
+                document.getElementById('activity').disabled = false;
+                document.getElementById('startButton').disabled = false;
+
+                // Disable end button
+                document.getElementById('endButton').disabled = true;
+            }
+        });
+
+        // window.addEventListener('load', () => {
+        //     const savedActivity = localStorage.getItem('currentActivity');
+        //     const savedStartTime = localStorage.getItem('startTime');
+        //     if (savedActivity && savedStartTime) {
+        //         document.getElementById('activity').value = savedActivity;
+        //         document.getElementById('startTime').innerText = formatTime(new Date(savedStartTime));
+        //         startTime = new Date(savedStartTime);
+
+        //         // Disable activity dropdown and start button
+        //         document.getElementById('activity').disabled = true;
+        //         document.getElementById('startButton').disabled = true;
+
+        //         // Enable end button
+        //         document.getElementById('endButton').disabled = false;
+
+        //         // Display elapsed time on page load
+        //         if (savedActivity === 'Production') {
+        //             displayTime(parseInt(localStorage.getItem('prodElapsedTime') || '0'), 'prod-timer', 'Production Time: ');
+        //         } else if (savedActivity.startsWith('Break')) {
+        //             displayTime(parseInt(localStorage.getItem('breakElapsedTime') || '0'), 'break-timer', 'Break Time: ');
+        //         }
+
+        //         startTimer(savedActivity); // Start the timer again if activity was in progress
+        //     } else {
+        //         // Enable activity dropdown and start button
+        //         document.getElementById('activity').disabled = false;
+        //         document.getElementById('startButton').disabled = false;
+
+        //         // Disable end button
+        //         document.getElementById('endButton').disabled = true;
+        //     }
+        // });
+
+        async function fetchProductivityData() {
+            const loggedInUserId = localStorage.getItem('loggedInUserId');
+            const productivityData = [];
+            const dateLabels = [];
+            let addProductivity = 0;
+            const q = query(collection(db, "EmployeeActivity", loggedInUserId, "activity"));
+            const querySnapshot = await getDocs(q);
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                if (data.activity === "Production") {
+                    const duration = data.difference.split(':');
+                    const minutes = parseInt(duration[0], 10);
+                    const seconds = parseInt(duration[1], 10);
+                    const totalSeconds = (minutes * 60) + seconds;
+                    addProductivity += totalSeconds;
+                    dateLabels.push(data.date);
+                }
+            });
+
+            addProductivity = addProductivity / (60 * 60);
+            console.log(addProductivity);
+            productivityData.push(parseFloat(addProductivity, 10)).toFixed(1);
+            return { dateLabels, productivityData };
+        }
+
+        function formatTime(date) {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+
+        function calculateTimeDifference(start, end) {
+            const startParts = start.split(':');
+            const endParts = end.split(':');
+
+            const startHours = parseInt(startParts[0], 10);
+            const startMinutes = parseInt(startParts[1], 10);
+            const startSeconds = parseInt(startParts[2], 10);
+
+            const endHours = parseInt(endParts[0], 10);
+            const endMinutes = parseInt(endParts[1], 10);
+            const endSeconds = parseInt(endParts[2], 10);
+
+            // Calculate the total start and end times in seconds
+            const totalStartSeconds = (startHours * 3600) + (startMinutes * 60) + startSeconds;
+            const totalEndSeconds = (endHours * 3600) + (endMinutes * 60) + endSeconds;
+
+            // Calculate the difference in seconds
+            const secondsDiff = totalEndSeconds - totalStartSeconds;
+
+            // Convert seconds to minutes and round to one decimal place
+            // const minutesDiff = (secondsDiff / 60);
+
+            return parseFloat(secondsDiff);
+        }
+
+
+        function setCurrentDate() {
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var formattedDate = year + '-' + month + '-' + day;
+            document.getElementById('currentDate').value = formattedDate;
+        }
+
+        async function sendTimeToFirebase(start, end, timeDiff) {
+            event.preventDefault();
+            console.log("Hii");
+            const activity = document.getElementById("activity").value;
+            const date = document.getElementById("currentDate").value;
+            const loggedInUserId = localStorage.getItem('loggedInUserId');
+            const name = document.getElementById('loggedUserName');
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var formattedDate = year + '-' + month + '-' + day;
+            try {
+                const docRef = collection(db, "EmployeeActivity", loggedInUserId, "activity");
+                // Set data
+                await addDoc(docRef, {
+                    date: formattedDate,
+                    activity: activity,
+                    uid: loggedInUserId,
+                    difference: timeDiff,
+                    startTime: start,
+                    EndTime: end,
+                });
+
+                const dailyRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
+                const dailyDoc = await getDoc(dailyRef);
+                const timeParts = timeDiff;
+                if (dailyDoc.exists()) {
+                    const data = dailyDoc.data();
+                    if (activity === 'Production') {
+                        await updateDoc(dailyRef, {
+                            production: (data.production || 0) + timeDiff
+                        });
+                    } else {
+                        await updateDoc(dailyRef, {
+                            break: (data.break || 0) + timeDiff
+                        });
+                    }
+                } else {
+                    await setDoc(dailyRef, {
+                        date: formattedDate,
+                        production: activity === 'Production' ? timeDiff : 0,
+                        break: activity !== 'Production' ? timeDiff : 0
+                    });
+                }
+
+                alert("Data sent to database!");
+            } catch (e) {
+                console.error("Error writing document: ", e);
+            }
+        }
+
+        function getDetails() {
+            const getId = document.getElementById('loggedEmployeeId').innerText;
+            const getName = document.getElementById('loggedUserName').innerText;
+            const getProcess = document.getElementById('loggedProcess').innerText;
+            document.getElementById('id').value = getId;
+            document.getElementById('name').value = getName;
+            document.getElementById('process').value = getProcess;
+        }
+
+
+        async function fetchProductionData() {
+            const loggedInUserId = localStorage.getItem('loggedInUserId');
+            const productionData = [];
+            const breakData = [];
+            const labels = [];
+            const now = new Date();
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(now);
+                date.setDate(now.getDate() - i);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const formattedDate = year + '-' + month + '-' + day;
+
+                labels.push(formattedDate);
+
+                const dailyRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
+                const dailyDoc = await getDoc(dailyRef);
+                if (dailyDoc.exists()) {
+                    const data = dailyDoc.data();
+                    const productionMinutes = data.production / (60 * 60);  // Convert seconds to minutes
+                    const breakMinutes = data.break / (60 * 60); // Convert seconds to minutes
+                    productionData.push(productionMinutes);
+                    breakData.push(breakMinutes);
+                } else {
+                    productionData.push(0);
+                    breakData.push(0);
+                }
+            }
+            return { labels, productionData, breakData };
+        }
+        async function createProductionChart() {
+            const ctx = document.getElementById('productionChart').getContext('2d');
+            const { labels, productionData, breakData } = await fetchProductionData();
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Production Time (Hours)',
+                            data: productionData,
+                            backgroundColor: 'purple',
+                            borderColor: 'purple',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Break Time (Hours)',
+                            data: breakData,
+                            backgroundColor: 'red',
+                            borderColor: 'red',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutBounce'
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: false // Hide grid lines on y-axis
+                            }
+
+                        },
+                        x: {
+                            beginAtZero: true,
+                            grid: {
+                                display: false // Hide grid lines on x-axis
+                            }
+                        },
+                    }
+
+                }
+            });
+        }
+
+        // Call this function to create the chart
+        createProductionChart();
+
+        function pieChart(prod, bre) {
+            let x = (((prod) / (60 * 60)) / 9) * 100;
+            let y = (((bre) / (60 * 60)) / 9) * 100;
+
+            const xValues = ["Productivity", "Break"];
+            const yValues = [x, y];
+            const barColors = [
+                "#6F40A1",
+                "#50E4E4",
+            ];
+
+            new Chart("myChart", {
+                type: "pie",
+                data: {
+                    labels: xValues,
+                    datasets: [{
+                        backgroundColor: barColors,
+                        data: yValues
+                    }]
+                },
+                options: {
+                    title: {
+                        display: true,
+                        text: "Productivity and Break"
+                    }
+                }
+            });
+        }
+
+    </script>
+    <script>
+
+
+        function setCurrentDate() {
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var formattedDate = year + '-' + month + '-' + day;
+            console.log(formattedDate);
+            document.getElementById('currentDate').innerText = formattedDate;
+        }
+    </script>
+</body>
+
+</html>
