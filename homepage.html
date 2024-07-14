@@ -587,7 +587,7 @@
         });
 
         window.addEventListener('load', () => {
-            if (currentActivity !== 'none' && startTime) {
+            if (startTime) {
                 const now = new Date();
                 const elapsed = now - new Date(lastUpdateTime);
                 lastUpdateTime = now;
@@ -597,10 +597,12 @@
                     prodElapsedTime += elapsed;
                     localStorage.setItem('prodElapsedTime', prodElapsedTime);
                     startTimer('Production');
+                    displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
                 } else if (currentActivity.startsWith('Break')) {
                     breakElapsedTime += elapsed;
                     localStorage.setItem('breakElapsedTime', breakElapsedTime);
                     startTimer('Break');
+                    displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
                 }
             }
 
@@ -619,7 +621,11 @@
             if (currentProcess !== 'none') {
                 document.getElementById('curr-process').value = currentProcess;
             }
+
+            displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
+            displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
         });
+
 
 
 
