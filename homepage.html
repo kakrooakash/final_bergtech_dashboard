@@ -154,6 +154,8 @@
         let currentActivity = localStorage.getItem('currentActivity') || 'none';
         let startTime = localStorage.getItem('startTime') ? new Date(localStorage.getItem('startTime')) : null;
         let lastUpdateTime = localStorage.getItem('lastUpdateTime') ? new Date(localStorage.getItem('lastUpdateTime')) : null;
+        let currentProcess = localStorage.getItem('currentProcess') || 'none';
+
         const x = document.getElementById('loggedShift').innerText;
         if (x == "9AM - 6PM") {
             console.log("Hiii");
@@ -446,15 +448,18 @@
         document.getElementById('startButton').addEventListener('click', (event) => {
             event.preventDefault();
             const activity = document.getElementById('activity').value;
+            const process = document.getElementById('curr-process').value;
             startTime = new Date();
             lastUpdateTime = startTime;
             localStorage.setItem('startTime', startTime.toISOString());
             localStorage.setItem('lastUpdateTime', lastUpdateTime.toISOString());
 
             document.getElementById('endButton').disabled = false;
-            if (activity !== 'none') {
+            if (activity !== 'none' && process !== 'none') {
                 currentActivity = activity;
+                currentProcess = process;
                 localStorage.setItem('currentActivity', currentActivity);
+                localStorage.setItem('currentProcess', currentProcess);
                 startTimer(activity);
 
                 document.getElementById('endButton').disabled = false;
@@ -462,8 +467,9 @@
                 document.getElementById('curr-process').disabled = true;
                 document.getElementById('startButton').disabled = true;
             }
-            document.getElementById('startTime').innerText = startTime.toLocaleTimeString();
-            alert(`Start Time: ${startTime.toLocaleTimeString()}`);
+            startTime = formatTime(startTime);
+            document.getElementById('startTime').innerText = startTime;
+            alert(`Start Time: ${startTime}`);
         });
 
         document.getElementById('endButton').addEventListener('click', (event) => {
@@ -484,13 +490,16 @@
                 stopTimer(currentActivity);
                 currentActivity = 'none';
                 localStorage.removeItem('currentActivity');
+                localStorage.removeItem('currentProcess');
             }
             alert(`End Time: ${formattedEndTime}`);
             alert(sTime);
             document.getElementById('endTime').innerText = formattedEndTime;
-            if (startTime) {
-                timeDiff = endTime - new Date(startTime);
-                // timeDiff = calculateTimeDifference(sTime, formattedEndTime);
+            if (sTime) {
+                // const timeDiff = (formattedEndTime -sTime);
+
+                timeDiff = calculateTimeDifference(sTime, formattedEndTime);
+                console.log(formattedEndTime, sTime, timeDiff);
                 alert(`Time Difference: ${timeDiff}`);
                 sendTimeToFirebase(sTime, formattedEndTime, timeDiff);
             } else {
@@ -559,12 +568,18 @@
             }
         });
 
-        // document.addEventListener('visibilitychange', () => {
-        //     if (document.visibilityState === 'visible' && currentActivity !== 'none') {
-        //         lastUpdateTime = new Date();
-        //         localStorage.setItem('lastUpdateTime', lastUpdateTime.toISOString());
-        //     }
-        // });
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && currentActivity !== 'none') {
+                lastUpdateTime = new Date();
+                localStorage.setItem('lastUpdateTime', lastUpdateTime.toISOString());
+            }
+        });
+
+        document.getElementById('curr-process').addEventListener('change', (event) => {
+            const selectedProcess = event.target.value;
+            currentProcess = selectedProcess;
+            localStorage.setItem('currentProcess', currentProcess);
+        });
 
         // Restore state on page load
         window.addEventListener('load', () => {
@@ -584,7 +599,41 @@
                     startTimer('Break');
                 }
             }
+
+            if (startTime) {
+                document.getElementById('startTime').innerText = new Date(startTime).toLocaleTimeString();
+            }
+
+            if (currentActivity !== 'none') {
+                document.getElementById('activity').value = currentActivity;
+                document.getElementById('endButton').disabled = false;
+                document.getElementById('activity').disabled = true;
+                document.getElementById('curr-process').disabled = true;
+                document.getElementById('startButton').disabled = true;
+            }
+
+            if (currentProcess !== 'none') {
+                document.getElementById('curr-process').value = currentProcess;
+            }
         });
+        // window.addEventListener('load', () => {
+        //     if (currentActivity !== 'none' && startTime) {
+        //         const now = new Date();
+        //         const elapsed = now - new Date(lastUpdateTime);
+        //         lastUpdateTime = now;
+        //         localStorage.setItem('lastUpdateTime', lastUpdateTime.toISOString());
+
+        //         if (currentActivity === 'Production') {
+        //             prodElapsedTime += elapsed;
+        //             localStorage.setItem('prodElapsedTime', prodElapsedTime);
+        //             startTimer('Production');
+        //         } else if (currentActivity.startsWith('Break')) {
+        //             breakElapsedTime += elapsed;
+        //             localStorage.setItem('breakElapsedTime', breakElapsedTime);
+        //             startTimer('Break');
+        //         }
+        //     }
+        // });
 
 
         async function fetchProductivityData() {
