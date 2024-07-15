@@ -268,8 +268,13 @@ button:hover {
     height: 295px;
 }
 
+
 .refresh-btn {
     background-color: gray;
+}
+
+.spinner-border {
+    margin-left: 8px; /* Space between text and spinner */
 }
 
 #prod-timer {
@@ -282,7 +287,7 @@ button:hover {
 }
 
 #break-timer {
-    margin-right: 390px;
+    margin-right: 370px;
     font-weight: 700;
     border-radius: 10px;
     padding: 15px;
@@ -306,5 +311,43 @@ button:hover {
 .output-column{
     text-align: center;
     background-color:white;
+}
+
+.popup {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.4);
+}
+
+.popup-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 30%;
+    box-shadow: 0px 0px 10px 2px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    text-align: center;
+}
+
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
 }
 

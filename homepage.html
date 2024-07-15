@@ -16,7 +16,6 @@
             <ul>
                 <li id="prod-timer">Production Time: 00:00:00</li>
                 <li id="break-timer">Break Time: 00:00:00</li>
-                <button id="updateButton">Update Shift Timings</button>
                 <button id="sign-out" class="signout">Sign Out</button>
             </ul>
         </nav>
@@ -30,7 +29,29 @@
                 <div>Email: <span id="loggedEmailId" name="loggedEmailId"></span></div>
                 <div>Employee Id: <span id="loggedEmployeeId" name="loggedEmployeeId"></span></div>
                 <div>Process: <span id="loggedProcess" name="loggedProcess"></span></div>
-                <div>Timing: <span id="loggedShift" name="loggedProcess"></span></div>
+                <div>Timing:
+                    <span id="loggedShift" name="loggedShift"></span>
+                    <i id="editShiftIcon" class="fa fa-edit" style="cursor: pointer;"></i>
+                </div>
+                <div id="shiftPopup" class="popup">
+                    <div class="popup-content">
+                        <span class="close-btn">&times;</span>
+                        <h2>Update Shift Timing</h2>
+                        <select id="shiftDropdown">
+                            <option value="">Select Shift</option>
+                            <option value="6AM - 3PM">6AM - 3PM</option>
+                            <option value="7:30AM - 4:30PM">7:30AM - 4:30PM</option>
+                            <option value="9AM - 6PM">9AM - 6PM</option>
+                            <option value="10AM - 7PM">10AM - 7PM</option>
+                            <option value="12PM - 9PM">12PM - 9PM</option>
+                            <option value="1PM - 11PM">1PM - 11PM</option>
+                            <option value="3PM - 12AM">3PM - 12AM</option>
+                            <option value="9PM - 6AM">9PM - 6AM</option>
+                        </select>
+                        <button id="updateShiftBtn">Update Shift</button>
+                    </div>
+                </div>
+                <br>
                 <br>
             </div>
             <div id="activity-card">
@@ -39,7 +60,7 @@
                     <select type="dropdown" name="curr-process" id="curr-process" class="form-control"
                         placeholder="Process" required>
                         <option value="none">Select Process</option>
-                        <option value="FlipkartK">MPQC:FK</option>
+                        <option value="Flipkart">MPQC:FK</option>
                         <option value="Shopsy">MPQC:Shopsy</option>
                         <option value="Upgrad">UPGRAD</option>
                         <option value="Hitl">HITL</option>
@@ -48,10 +69,10 @@
                         <option value="vsqa">V.SQA</option>
                         <option value="vernac">Vernac</option>
                         <option value="allen">Allen</option>
-                        <option value="counter">Counter feit</option>
+                        <option value="counter-feit">Counter feit</option>
                         <option value="labelling">Labelling</option>
                         <option value="rsqa">RSQA</option>
-                        <option value="st">Clear Trip</option>
+                        <option value="ctear trip">Clear Trip</option>
                         <option value="mis">MIS</option>
                         <option value="others">Others</option>
                     </select>
@@ -67,7 +88,12 @@
                     </select>
                     <div class="buttons">
                         <button id="startButton" class="buttontimmer">Start</button>
-                        <button id="endButton" class="buttontimmer" onclick="setCurrentDate()">End</button>
+                        <!-- <button id="endButton" class="buttontimmer" onclick="setCurrentDate()">End</button> -->
+                        <button class="buttontimmer" id="endButton" onclick="setCurrentDate()">
+                            <span id="submit-text">End</span>
+                            <span id="loading-spinner" class="spinner-border spinner-border-sm" style="display: none;"
+                                role="status" aria-hidden="true"></span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -93,7 +119,6 @@
                 </div>
                 <div class="chart">
                     <canvas id="myCharttwo" class="myChart"></canvas>
-
                 </div>
                 <div class="graph-data">
                     <div><span id="prodToday" name="prodToday" hidden></span></div>
@@ -194,6 +219,49 @@
             }
         });
 
+        document.getElementById('editShiftIcon').addEventListener('click', () => {
+            document.getElementById('shiftPopup').style.display = 'block';
+        });
+
+        // Close the popup when the close button is clicked
+        document.querySelector('.close-btn').addEventListener('click', () => {
+            document.getElementById('shiftPopup').style.display = 'none';
+        });
+
+        // Update shift timing when the update button is clicked
+        document.getElementById('updateShiftBtn').addEventListener('click', () => {
+            const selectedShift = document.getElementById('shiftDropdown').value;
+            const loggedInUserId = localStorage.getItem('loggedInUserId');
+
+            if (selectedShift && loggedInUserId) {
+                const docRef = doc(db, "users", loggedInUserId);
+
+                // Update the shift timing in Firestore
+                updateDoc(docRef, {
+                    timings: selectedShift
+                }).then(() => {
+                    // Update the displayed shift timing on the profile card
+                    document.getElementById('loggedShift').innerText = selectedShift;
+                    alert('Shift timing updated successfully');
+
+                    // Hide the popup after updating
+                    document.getElementById('shiftPopup').style.display = 'none';
+                }).catch((error) => {
+                    console.error("Error updating document: ", error);
+                    alert('Failed to update shift timing');
+                });
+            } else {
+                alert('Please select a shift timing');
+            }
+        });
+
+        // Close the popup when clicking outside of the popup content
+        window.onclick = function (event) {
+            const popup = document.getElementById('shiftPopup');
+            if (event.target == popup) {
+                popup.style.display = 'none';
+            }
+        };
         document.addEventListener('DOMContentLoaded', (event) => {
             const loggedInUserId = localStorage.getItem('loggedInUserId');
             const colRef = collection(db, "EmployeeActivity", loggedInUserId, "activity");
@@ -216,7 +284,7 @@
                         if (formattedDate == date && activity == "Production" && process == "Upgrad") {
                             upgrad += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "FlipkartK") {
+                        else if (formattedDate == date && activity == "Production" && process == "Flipkart") {
                             mpqcfk += parseFloat(difference, 10);
                         }
                         else if (formattedDate == date && activity == "Production" && process == "Shopsy") {
@@ -241,7 +309,7 @@
                         else if (formattedDate == date && activity == "Production" && process == "allen") {
                             allen += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "counter") {
+                        else if (formattedDate == date && activity == "Production" && process == "counter-feit") {
                             counter += parseFloat(difference, 10);
                         }
                         else if (formattedDate == date && activity == "Production" && process == "labelling") {
@@ -250,7 +318,7 @@
                         else if (formattedDate == date && activity == "Production" && process == "rsqa") {
                             rsqa += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "st") {
+                        else if (formattedDate == date && activity == "Production" && process == "ctear trip") {
                             st += parseFloat(difference, 10);
                         }
                         else if (formattedDate == date && activity == "Production" && process == "mis") {
@@ -373,7 +441,7 @@
                             document.getElementById('startTime').innerText = '';
                             document.getElementById('endTime').innerText = '';
 
-                            console.log('User signed out successfully.');
+                            alert('User signed out successfully.');
                             window.location.replace("index.html");
                         })
                         .catch(error => {
@@ -469,6 +537,8 @@
 
         document.getElementById('endButton').addEventListener('click', (event) => {
             event.preventDefault();
+            document.getElementById('submit-text').style.display = 'none';
+            document.getElementById('loading-spinner').style.display = 'inline-block';
             endActivity();
         });
 
@@ -487,10 +557,11 @@
             }
 
             alert(`End Time: ${formattedEndTime}`);
+            document.getElementById('loading-spinner').style.display = 'none';
+            document.getElementById('submit-text').style.display = 'inline';
             document.getElementById('endTime').innerText = formattedEndTime;
             if (startTime) {
                 timeDiff = Math.floor((endTime - startTime) / 1000); // Time difference in seconds
-                alert(`Time Difference: ${timeDiff} seconds`);
                 sendTimeToFirebase(sTime, formattedEndTime, timeDiff);
             } else {
                 console.error('Start time is not set');
@@ -529,7 +600,6 @@
             fetch(scriptURL, { method: 'POST', body: formData })
                 .then(response => {
                     if (response.ok) {
-                        alert("Data sent to Google Sheets successfully.");
                         // Optionally reload or perform other actions after success
                     } else {
                         throw new Error('Failed to send data to Google Sheets.');
@@ -554,8 +624,8 @@
             }
         });
 
-        
-     
+
+
 
         document.getElementById('curr-process').addEventListener('change', (event) => {
             const selectedProcess = event.target.value;
@@ -563,7 +633,7 @@
             localStorage.setItem('currentProcess', currentProcess);
         });
 
-         document.addEventListener('visibilitychange', () => {
+        document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden' && currentActivity !== 'none') {
                 hiddenTime = new Date();
                 localStorage.setItem('hiddenTime', hiddenTime.toISOString());
@@ -746,7 +816,9 @@
                     });
                 }
 
-                alert("Data sent to database!");
+                alert("Activity submitted!");
+                document.getElementById('loading-spinner').style.display = 'none';
+                document.getElementById('submit-text').style.display = 'inline';
             } catch (e) {
                 console.error("Error writing document: ", e);
             }
@@ -782,8 +854,8 @@
                 const dailyDoc = await getDoc(dailyRef);
                 if (dailyDoc.exists()) {
                     const data = dailyDoc.data();
-                    const productionMinutes = data.production / (60 * 60);  // Convert seconds to minutes
-                    const breakMinutes = data.break / (60 * 60); // Convert seconds to minutes
+                    const productionMinutes = data.production / (60 * 60);
+                    const breakMinutes = data.break / (60 * 60);
                     productionData.push(productionMinutes);
                     breakData.push(breakMinutes);
                 } else {
@@ -871,42 +943,91 @@
                 options: {
                     title: {
                         display: true,
-                        text: "Productivity and Break"
+                        text: "Productivity and Break",
+                        font: {
+                            size: 18 // You can adjust the font size here
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function () {
+                                return "Productivity and Break";
+                            },
+                            label: function (tooltipItem) {
+                                let label = xValues[tooltipItem.dataIndex];
+                                let value = yValues[tooltipItem.dataIndex];
+                                return `${label}: ${value.toFixed(2)} hours`;
+                            }
+                        }
                     }
                 }
             });
         }
 
         function pieChart2(upgrad, shopsy, mpqcfk, hitl, rqa, ugc, vsqa, vernac, allen, counter, labelling, rsqa, st, mis, others) {
-            let x = (upgrad) / (60 * 60);
-            let y = (shopsy) / (60 * 60);
-            let z = (mpqcfk) / (60 * 60);
-            let p = (hitl) / (60 * 60);
-            let a = (ugc) / (60 * 60);
+            let a = (upgrad) / (60 * 60);
+            let b = (shopsy) / (60 * 60);
+            let c = (mpqcfk) / (60 * 60);
+            let d = (hitl) / (60 * 60);
+            let e = (rqa) / (60 * 60);
+            let f = (ugc) / (60 * 60);
+            let g = (vsqa) / (60 * 60);
+            let h = (vernac) / (60 * 60);
+            let i = (allen) / (60 * 60);
+            let j = (counter) / (60 * 60);
+            let k = (labelling) / (60 * 60);
+            let l = (rsqa) / (60 * 60);
+            let m = (st) / (60 * 60);
+            let n = (mis) / (60 * 60);
+            let o = (others) / (60 * 60);
 
-            // const xValues = ["Upgrad", "Shopsy", "Flipkart", "HITL","UGC"];
-            const yValues = [x, y, z, p, a];
+            const labels = ["Upgrad", "Shopsy", "Flipkart", "HITL", "RQA", "UGC", "VSQA", "Vernac", "Allen", "Counter", "Labelling", "RSQA", "Clear Trip", "MIS", "Others"];
+            const yValues = [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o];
             const barColors = [
-                "#6F40A1",
-                "#50E4E4",
-                "pink",
-                "red",
-                "black"
+                "#FF0000", "#008000", "#0000FF", "#FFA500", "#800080",
+                "#FFFF00", "#FFC0CB", "#00FFFF", "#FF00FF", "#00FF00",
+                "#A52A2A", "#800000", "#808000", "#000080", "#008080"
             ];
+
+            const filteredData = yValues.map((value, index) => {
+                return {
+                    label: labels[index],
+                    value: value,
+                    color: barColors[index]
+                };
+            }).filter(data => data.value > 0);
+
+            const filteredLabels = filteredData.map(data => data.label);
+            const filteredValues = filteredData.map(data => data.value);
+            const filteredColors = filteredData.map(data => data.color);
 
             new Chart("myCharttwo", {
                 type: "pie",
                 data: {
-                    labels: ["Upgrad", "Shopsy", "Flipkart", "HITL", "UGC"],
+                    labels: filteredLabels,
                     datasets: [{
-                        backgroundColor: barColors,
-                        data: yValues
+                        backgroundColor: filteredColors,
+                        data: filteredValues
                     }]
                 },
                 options: {
                     title: {
                         display: true,
                         text: "Productivity and Break"
+                    },
+                    plugins: {
+                        legend: {
+                            display: true  // Show legend only for values that are not zero
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (tooltipItem) {
+                                    let label = filteredLabels[tooltipItem.dataIndex];
+                                    let value = filteredValues[tooltipItem.dataIndex];
+                                    return `${label}: ${value.toFixed(2)} hours`;
+                                }
+                            }
+                        }
                     }
                 }
             });

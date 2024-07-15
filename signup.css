@@ -149,7 +149,9 @@ h6 span{
   -webkit-transition: all 200ms linear;
     transition: all 200ms linear;
 }
-
+.spinner-border {
+  margin-left: 8px; /* Space between text and spinner */
+}
 
 .form-group input:-ms-input-placeholder  {
   color: #c4c3ca;

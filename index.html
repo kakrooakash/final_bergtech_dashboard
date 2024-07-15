@@ -48,10 +48,22 @@
                                                 <div class="form-group mt-2">
                                                     <select type="dropdown" name="activity" class="form-style"
                                                         placeholder="Activity" id="activity" autocomplete="off">
-                                                        <option value="MPQC:FK">MPQC:FK</option>
-                                                        <option value="MPQC:Shopsy">MPQC:Shopsy</option>
-                                                        <option value="HITL">HITL</option>
-                                                        <option value="UPGRAD">UPGRAD</option>
+                                                        <option value="none">Select Process</option>
+                                                        <option value="Flipkart">MPQC:FK</option>
+                                                        <option value="Shopsy">MPQC:Shopsy</option>
+                                                        <option value="Upgrad">UPGRAD</option>
+                                                        <option value="Hitl">HITL</option>
+                                                        <option value="rqa">RQA</option>
+                                                        <option value="ugc">UGC</option>
+                                                        <option value="vsqa">V.SQA</option>
+                                                        <option value="vernac">Vernac</option>
+                                                        <option value="allen">Allen</option>
+                                                        <option value="counter-feit">Counter feit</option>
+                                                        <option value="labelling">Labelling</option>
+                                                        <option value="rsqa">RSQA</option>
+                                                        <option value="ctear trip">Clear Trip</option>
+                                                        <option value="mis">MIS</option>
+                                                        <option value="others">Others</option>
                                                     </select>
                                                 </div>
 
@@ -69,7 +81,10 @@
                                                         <option value="9PM - 6AM">9PM - 6AM</option>
                                                     </select>
                                                 </div>
-                                                <button type="submit" class="btn mt-4" id="submit">Signup</button>
+                                                <button type="submit" class="btn mt-4" id="submit">
+                                                    <span id="submit-text">Signup</span>
+                                                    <span id="loading-spinner" class="spinner-border spinner-border-sm" style="display: none;" role="status" aria-hidden="true"></span>
+                                                </button>
 
                                                 <p class="mb-0 mt-4 text-center">Already have an account? <a
                                                         href="login.html">Login</a></p>
@@ -109,6 +124,9 @@
         signUp.addEventListener('click', (e) => {
             e.preventDefault(); // Use 'e' instead of 'event'
 
+            document.getElementById('submit-text').style.display = 'none';
+            document.getElementById('loading-spinner').style.display = 'inline-block';
+
             var email = document.getElementById('email').value;
             var username = document.getElementById('fullname').value;
             var password = document.getElementById('password').value;
@@ -127,7 +145,7 @@
             fetch(scriptURL, { method: 'POST', body: formData })
                 .then(response => {
                     if (response.ok) {
-                        alert("Thank you! Your form is submitted successfully.");
+                      
                         // Proceed with Firebase sign-up
                         const auth = getAuth();
                         const db = getFirestore();
@@ -146,6 +164,8 @@
                                 const docRef = doc(db, "users", user.uid);
                                 setDoc(docRef, userData)
                                     .then(() => {
+                                        document.getElementById('loading-spinner').style.display = 'none';
+                                        document.getElementById('submit-text').style.display = 'inline';
                                         window.location.replace("login.html");
                                         // window.location.reload();
                                     })
@@ -153,12 +173,16 @@
                                         const errorCode = error.code;
                                         const errorMessage = error.message;
                                         alert(errorMessage);
+                                        document.getElementById('loading-spinner').style.display = 'none';
+                                        document.getElementById('submit-text').style.display = 'inline';
                                     });
                             })
                             .catch((error) => {
                                 const errorCode = error.code;
                                 const errorMessage = error.message;
                                 alert(errorMessage);
+                                document.getElementById('loading-spinner').style.display = 'none';
+                                document.getElementById('submit-text').style.display = 'inline';
                             });
                     } else {
                         throw new Error('Form submission failed.');

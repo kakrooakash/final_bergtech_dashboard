@@ -33,7 +33,10 @@
                                                         placeholder="Your Password" id="password" autocomplete="off">
                                                     <i class="input-icon uil uil-lock-alt"></i>
                                                 </div>
-                                                <button type="submit" class="btn mt-4" id="logIn">Login</button>
+                                                <button type="submit" class="btn mt-4" id="logIn">
+                                                    <span id="submit-text">Login</span>
+                                                    <span id="loading-spinner" class="spinner-border spinner-border-sm" style="display: none;" role="status" aria-hidden="true"></span>
+                                                </button>
                                                 <div>
                                                     <label class="mb-0 mt-4 text-center" id="forgetpass"><a
                                                             class="link">Forgot your
@@ -73,6 +76,10 @@
 
         logIn.addEventListener("click", (e) => {
             event.preventDefault();
+
+            document.getElementById('submit-text').style.display = 'none';
+            document.getElementById('loading-spinner').style.display = 'inline-block';
+
             var email = document.getElementById('email').value;
             var password = document.getElementById('password').value;
             const auth = getAuth();
@@ -81,24 +88,30 @@
                     alert("User LoggedIn!")
                     const user = userCredential.user;
                     localStorage.setItem('loggedInUserId', user.uid);
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    document.getElementById('submit-text').style.display = 'inline';
                     window.location.replace("homepage.html");
 
                 }).catch((error) => {
                     const errorCode = error.code;
                     const errorMessage = error.message;
                     alert(errorMessage);
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    document.getElementById('submit-text').style.display = 'inline';
                 });
         })
 
         let forgotpassword = () => {
             sendPasswordResetEmail(auth, email.value)
                 .then(() => {
-                    alert("reset email sent");
+                    alert("Reset email sent");
                 })
                 .catch((error) => {
                     const errorCode = error.code;
                     const errorMessage = error.message;
                     alert(errorMessage);
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    document.getElementById('submit-text').style.display = 'inline';
                 });
         }
         forgetpass.addEventListener('click', forgotpassword);
