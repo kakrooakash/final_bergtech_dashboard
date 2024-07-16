@@ -88,7 +88,6 @@
                     </select>
                     <div class="buttons">
                         <button id="startButton" class="buttontimmer">Start</button>
-                        <!-- <button id="endButton" class="buttontimmer" onclick="setCurrentDate()">End</button> -->
                         <button class="buttontimmer" id="endButton" onclick="setCurrentDate()">
                             <span id="submit-text">End</span>
                             <span id="loading-spinner" class="spinner-border spinner-border-sm" style="display: none;"
@@ -111,6 +110,8 @@
             <input type="hidden" id="startTime" name="startTime">
             <input type="hidden" id="endTime" name="endTime">
             <input type="hidden" id="currentDate" name="currentDate">
+            <div id="customAlert">Activity ended</div>
+            <div id="customAlerttwo">Activity started</div>
 
             <div id="graphical-data">
                 <div class="chart">
@@ -518,6 +519,7 @@
             lastUpdateTime = startTime;
             localStorage.setItem('startTime', startTime.toISOString());
             localStorage.setItem('lastUpdateTime', lastUpdateTime.toISOString());
+           
 
             if (activity !== 'none' && process !== 'none') {
                 currentActivity = activity;
@@ -525,14 +527,13 @@
                 localStorage.setItem('currentActivity', currentActivity);
                 localStorage.setItem('currentProcess', currentProcess);
                 startTimer(activity);
-
+                customAlerttwo();
                 document.getElementById('endButton').disabled = false;
                 document.getElementById('activity').disabled = true;
                 document.getElementById('curr-process').disabled = true;
                 document.getElementById('startButton').disabled = true;
             }
             document.getElementById('startTime').innerText = startTime.toLocaleTimeString();
-            alert(`Start Time: ${startTime.toLocaleTimeString()}`);
         });
 
         document.getElementById('endButton').addEventListener('click', (event) => {
@@ -556,7 +557,6 @@
                 localStorage.removeItem('currentProcess');
             }
 
-            alert(`End Time: ${formattedEndTime}`);
             document.getElementById('loading-spinner').style.display = 'none';
             document.getElementById('submit-text').style.display = 'inline';
             document.getElementById('endTime').innerText = formattedEndTime;
@@ -611,6 +611,8 @@
             document.getElementById('startButton').disabled = false;
             document.getElementById('curr-process').disabled = false;
             document.getElementById('endButton').disabled = true;
+
+            showAlert();
         }
 
         document.getElementById('activity').addEventListener('change', (event) => {
@@ -623,9 +625,6 @@
                 localStorage.setItem('currentActivity', currentActivity);
             }
         });
-
-
-
 
         document.getElementById('curr-process').addEventListener('change', (event) => {
             const selectedProcess = event.target.value;
@@ -816,7 +815,6 @@
                     });
                 }
 
-                alert("Activity submitted!");
                 document.getElementById('loading-spinner').style.display = 'none';
                 document.getElementById('submit-text').style.display = 'inline';
             } catch (e) {
@@ -1036,7 +1034,22 @@
     </script>
     <script>
 
+        function showAlert() {
+            const alertBox = document.getElementById('customAlert');
+            alertBox.style.display = 'block';
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 3000);
+        }
 
+
+        function customAlerttwo() {
+            const alertBox = document.getElementById('customAlerttwo');
+            alertBox.style.display = 'block';
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 3000);
+        }
         function setCurrentDate() {
             var now = new Date();
             var year = now.getFullYear();

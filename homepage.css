@@ -277,6 +277,34 @@ button:hover {
     margin-left: 8px; /* Space between text and spinner */
 }
 
+#customAlert {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: black;
+    padding: 70px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    z-index: 1000;
+    color: white;
+}
+
+#customAlerttwo {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: black;
+    padding: 70px;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    z-index: 1000;
+}
+
 #prod-timer {
     font-weight: 700;
     border-radius: 10px;
@@ -296,7 +324,16 @@ button:hover {
     /* box-shadow: 0 4px 15px rgba(0, 0, 0, 0.588); */
 }
 
+.buttontimmer {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
 
+.buttontimmer.green {
+    background-color: green;
+    color: white;
+}
 
 .chart{
    border-radius: 20px;
