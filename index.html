@@ -4,90 +4,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Signup</title>
+    <title>Document</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/bdedc8c31a.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="signup.css">
 </head>
 
 <body>
-    <form method="post" name="contact-form">
+    <form name="submit-to-google-sheet">
         <div class="section">
             <div class="container">
                 <div class="row full-height justify-content-center">
                     <div class="col-12 text-center align-self-center py-5">
                         <div class="section pb-5 pt-5 pt-sm-2 text-center">
+                            <label for="reg-log"></label>
                             <div class="card-3d-wrap mx-auto">
                                 <div class="card-3d-wrapper">
-                                    <div class="card-front">
+                                    <div class="card-back">
                                         <div class="center-wrap">
                                             <div class="section text-center">
-                                                <h4 class="mb-4 pb-3">Sign Up</h4>
-                                                <div class="form-group mt-2">
-                                                    <input type="text" name="eid" class="form-style"
-                                                        placeholder="Employee Id" id="eid" autocomplete="off">
-
-                                                </div>
-
-                                                <div class="form-group mt-2">
-                                                    <input type="text" name="fullname" class="form-style"
-                                                        placeholder="Your Full Name" id="fullname" autocomplete="off">
-
-                                                </div>
-
+                                                <h4 class="mb-4 pb-3">Log In</h4>
                                                 <div class="form-group mt-2">
                                                     <input type="email" name="email" class="form-style"
                                                         placeholder="Your Email" id="email" autocomplete="off">
-
+                                                    <i class="input-icon uil uil-at"></i>
                                                 </div>
                                                 <div class="form-group mt-2">
                                                     <input type="password" name="password" class="form-style"
                                                         placeholder="Your Password" id="password" autocomplete="off">
-
+                                                    <i class="input-icon uil uil-lock-alt"></i>
                                                 </div>
-                                                <div class="form-group mt-2">
-                                                    <select type="dropdown" name="activity" class="form-style"
-                                                        placeholder="Activity" id="activity" autocomplete="off">
-                                                        <option value="none">Select Process</option>
-                                                        <option value="Flipkart">MPQC:FK</option>
-                                                        <option value="Shopsy">MPQC:Shopsy</option>
-                                                        <option value="Upgrad">UPGRAD</option>
-                                                        <option value="Hitl">HITL</option>
-                                                        <option value="rqa">RQA</option>
-                                                        <option value="ugc">UGC</option>
-                                                        <option value="vsqa">V.SQA</option>
-                                                        <option value="vernac">Vernac</option>
-                                                        <option value="allen">Allen</option>
-                                                        <option value="counter-feit">Counter feit</option>
-                                                        <option value="labelling">Labelling</option>
-                                                        <option value="rsqa">RSQA</option>
-                                                        <option value="ctear trip">Clear Trip</option>
-                                                        <option value="mis">MIS</option>
-                                                        <option value="others">Others</option>
-                                                    </select>
-                                                </div>
-
-                                                <div class="form-group mt-2">
-                                                    <select type="dropdown" name="shift-timing" class="form-style"
-                                                        placeholder="Shift Timings" id="shift-timing"
-                                                        autocomplete="off">
-                                                        <option value="6AM - 3PM">6AM - 3PM</option>
-                                                        <option value="7:30AM - 4:30PM">7:30AM - 4:30PM</option>
-                                                        <option value="9AM - 6PM">9AM - 6PM</option>
-                                                        <option value="10AM - 7PM">10AM - 7PM</option>
-                                                        <option value="12PM - 9PM">12PM - 9PM</option>
-                                                        <option value="1PM - 11PM">1PM - 11PM</option>
-                                                        <option value="3PM - 12AM">3PM - 12AM</option>
-                                                        <option value="9PM - 6AM">9PM - 6AM</option>
-                                                    </select>
-                                                </div>
-                                                <button type="submit" class="btn mt-4" id="submit">
-                                                    <span id="submit-text">Signup</span>
-                                                    <span id="loading-spinner" class="spinner-border spinner-border-sm" style="display: none;" role="status" aria-hidden="true"></span>
+                                                <button type="submit" class="btn mt-4" id="logIn">
+                                                    <span id="submit-text">Login</span>
+                                                    <span id="loading-spinner" class="spinner-border spinner-border-sm"
+                                                        style="display: none;" role="status" aria-hidden="true"></span>
                                                 </button>
-                   
-                                                <p class="mb-0 mt-4 text-center">Already have an account? <a
-                                                        href="login.html">Login</a></p>
+
+                                                <p class="mb-0 mt-4 text-center">Don't have an account? <a
+                                                        href="signup.html">Register</a></p>
+
+                                                <div>
+                                                    <label class="mb-0 mt-4 text-center" id="forgetpass"><a
+                                                            class="link">Forgot your
+                                                            password?</a></label>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -99,11 +58,11 @@
             </div>
         </div>
     </form>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-        import { getFirestore, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
-        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+        import { getFirestore, getDoc, updateDoc, doc, query, where, setDoc, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDVMhk4-La8nK63C6rsphn16CPWIrmFbmA",
@@ -114,84 +73,77 @@
             appId: "1:881972436006:web:c1df7ce089a267118edae7"
         };
 
-        const signUp = document.getElementById('submit');
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbzAVo-P1Eb9r-N4XOrEopIUuo-58dYkpCH2kJw4texWww7xV5UBhLzUK2lARe1iuFo7/exec';
-        const form = document.forms['contact-form'];
-
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
+        const db = getFirestore(app);
 
-        signUp.addEventListener('click', (e) => {
-            e.preventDefault(); // Use 'e' instead of 'event'
+        let forgetpass = document.getElementById('forgetpass');
+        let email = document.getElementById('email');
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const uid = localStorage.getItem('loggedInUserId');
+            if (uid) {
+                window.location.href = 'homepage.html';
+            }
+        });
+
+        logIn.addEventListener("click", async (e) => {
+            event.preventDefault();
 
             document.getElementById('submit-text').style.display = 'none';
             document.getElementById('loading-spinner').style.display = 'inline-block';
 
             var email = document.getElementById('email').value;
-            var username = document.getElementById('fullname').value;
             var password = document.getElementById('password').value;
-            var process = document.getElementById('activity').value;
-            var employeeid = document.getElementById('eid').value;
-            var timings = document.getElementById('shift-timing').value;
+            const auth = getAuth();
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                localStorage.setItem('loggedInUserId', user.uid);
 
-            // Manually create a FormData object to send to Google Sheets
-            const formData = new FormData();
-            formData.append('email', email);
-            formData.append('username', username);
-            formData.append('employeeid', employeeid);
-            formData.append('process', process);
-            formData.append('timings', timings);
+                const userId = user.uid;
+                const now = new Date();
+                const formattedDate = now.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
+                const formattedTime = now.toTimeString().split(' ')[0]; // Format time as HH:MM:SS
+                const dailyDataDocRef = doc(db, "EmployeeActivity", userId, "dailyData", formattedDate);
 
-            fetch(scriptURL, { method: 'POST', body: formData })
-                .then(response => {
-                    if (response.ok) {
-                      
-                        // Proceed with Firebase sign-up
-                        const auth = getAuth();
-                        const db = getFirestore();
-                        createUserWithEmailAndPassword(auth, email, password)
-                            .then((userCredential) => {
-                                const user = userCredential.user;
-                                const userData = {
-                                    email: email,
-                                    username: username,
-                                    employeeid: employeeid,
-                                    process: process,
-                                    timings: timings
-                                };
+                // Check if the document exists and if it has a login time field
+                const dailyDataDoc = await getDoc(dailyDataDocRef);
+                if (!dailyDataDoc.exists() || !dailyDataDoc.data().loginTime) {
+                    // Add login time field if it doesn't exist
+                    await setDoc(dailyDataDocRef, {
+                        loginTime: formattedTime
+                    }, { merge: true });
+                }
 
-                                alert('User created');
-                                const docRef = doc(db, "users", user.uid);
-                                setDoc(docRef, userData)
-                                    .then(() => {
-                                        document.getElementById('loading-spinner').style.display = 'none';
-                                        document.getElementById('submit-text').style.display = 'inline';
-                                        window.location.replace("login.html");
-                                        // window.location.reload();
-                                    })
-                                    .catch((error) => {
-                                        const errorCode = error.code;
-                                        const errorMessage = error.message;
-                                        alert(errorMessage);
-                                        document.getElementById('loading-spinner').style.display = 'none';
-                                        document.getElementById('submit-text').style.display = 'inline';
-                                    });
-                            })
-                            .catch((error) => {
-                                const errorCode = error.code;
-                                const errorMessage = error.message;
-                                alert(errorMessage);
-                                document.getElementById('loading-spinner').style.display = 'none';
-                                document.getElementById('submit-text').style.display = 'inline';
-                            });
-                    } else {
-                        throw new Error('Form submission failed.');
-                    }
+                document.getElementById('loading-spinner').style.display = 'none';
+                document.getElementById('submit-text').style.display = 'inline';
+                window.location.replace("homepage.html");
+            } catch (error) {
+                const errorCode = error.code;
+                const errorMessage = error.message;
+                alert(errorMessage);
+                document.getElementById('loading-spinner').style.display = 'none';
+                document.getElementById('submit-text').style.display = 'inline';
+            }
+        })
+
+        let forgotpassword = () => {
+            sendPasswordResetEmail(auth, email.value)
+                .then(() => {
+                    alert("Reset email sent");
                 })
-                .catch(error => console.error('Error!', error.message));
-        });
+                .catch((error) => {
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    alert(errorMessage);
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    document.getElementById('submit-text').style.display = 'inline';
+                });
+        }
+        forgetpass.addEventListener('click', forgotpassword);
     </script>
-
 </body>
 
 </html>

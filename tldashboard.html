@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TL Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="tl.css">
+</head>
+
+<body>
+    <div class="container">
+        <label for="processDropdown">Select Process:</label>
+        <input type="text" id="datePicker" placeholder="Select Date">
+        <select id="processDropdown" onchange="filterUsersByProcess()">
+            <option value="">Select a process</option>
+        </select>
+        <button onclick="resetFilters()" class="reset-button">Reset</button>
+        <button class="export-button" onclick="exportTableToExcel()">Export to Excel</button>
+        <div class="export-button-container">
+
+        </div>
+        <div class="table-container">
+            <table border="1" id="user-table">
+                <thead>
+                    <tr>
+                        <th>Email ID</th>
+                        <th>Login Time</th>
+                        <th>Production Hours</th>
+                        <th>Break Hours</th>
+                        <th>Current Activity</th>
+                        <th>Signout Time</th>
+                    </tr>
+                </thead>
+                <tbody id="emailTableBody">
+                    <!-- Filtered data will be displayed here -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from
+            "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+        import { getFirestore, getDoc, updateDoc, doc, query, where, setDoc, addDoc, collection, getDocs, limit, startAfter, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVMhk4-La8nK63C6rsphn16CPWIrmFbmA",
+            authDomain: "final-project-8c053.firebaseapp.com",
+            projectId: "final-project-8c053",
+            storageBucket: "final-project-8c053.appspot.com",
+            messagingSenderId: "881972436006",
+            appId: "1:881972436006:web:c1df7ce089a267118edae7"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
+        const db = getFirestore(app);
+
+        // const USERS_PER_PAGE = 100;
+        let lastVisibleUser = null;
+        let selectedDate = "";
+        let selectedProcessExcel = "";
+
+        const loggedInUserId = localStorage.getItem('loggedInUserId');
+        console.log(loggedInUserId);
+
+        document.addEventListener("DOMContentLoaded", function () {
+            flatpickr("#datePicker", {
+                dateFormat: "Y-m-d",
+                onChange: function (selectedDates, dateStr, instance) {
+                    selectedDate = dateStr;
+                    console.log("Selected date:", dateStr);
+                }
+            });
+
+            checkUserDesignation();
+            populateDropdown();
+        });
+
+        async function checkUserDesignation() {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    const loggedInUserId = localStorage.getItem('loggedInUserId');
+                    if (loggedInUserId) {
+                        try {
+                            const docRef = doc(db, "users", loggedInUserId);
+                            const docSnap = await getDoc(docRef);
+                            if (docSnap.exists()) {
+                                const userData = docSnap.data();
+                                if (userData.designation !== "TL") {
+                                    alert("You are not authorized to access this page.");
+                                    window.location.href = "notauthpage.html";
+                                }
+                            } else {
+                                console.log("No document found");
+                                window.location.href = "index.html";
+                            }
+                        } catch (error) {
+                            console.error("Error fetching user document:", error);
+                            window.location.href = "index.html";
+                        }
+                    } else {
+                        window.location.href = "index.html";
+                    }
+                } else {
+                    window.location.href = "index.html";
+                }
+            });
+        }
+
+        async function fetchProcesses() {
+            const processes = new Set();
+            const usersSnapshot = await getDocs(collection(db, 'users'));
+            usersSnapshot.forEach(doc => {
+                const process = doc.data().process;
+                if (process) {
+                    processes.add(process);
+                }
+            });
+            return Array.from(processes);
+        }
+
+        async function populateDropdown() {
+            const processes = await fetchProcesses();
+            const dropdown = document.getElementById('processDropdown');
+            processes.forEach(process => {
+                const option = document.createElement('option');
+                option.value = process;
+                option.textContent = process;
+                dropdown.appendChild(option);
+            });
+        }
+
+        async function addUserToTable(userDoc) {
+            const email = userDoc.data().email;
+            const userId = userDoc.id;
+            const today = new Date();
+            const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+            const dailyDataDocRef = doc(db, "EmployeeActivity", userId, "dailyData", selectedDate);
+            const dailyDataDoc = await getDoc(dailyDataDocRef);
+
+            if (dailyDataDoc.exists()) {
+                const dailyData = dailyDataDoc.data();
+                // if ('production' in dailyData || 'break' in dailyData || 'loginTime' in dailyData) {
+
+                const productivity = secondsToHMS(dailyData.production);
+                const breakHours = secondsToHMS(dailyData.break);
+                const loginTime = dailyData.loginTime;
+                const activity = dailyData.currentActivity;
+                const signoutTime = dailyData.signOutTime;
+
+                const row = document.createElement('tr');
+                row.id = `row-${userId}`;
+                const emailCell = document.createElement('td');
+                const productivityCell = document.createElement('td');
+                const breakCell = document.createElement('td');
+                const loginCell = document.createElement('td');
+                const activityCell = document.createElement('td');
+                const signoutCell = document.createElement('td');
+                activityCell.id = `activity-${userId}`;
+                productivityCell.id = `productivity-${userId}`;
+                breakCell.id = `break-${userId}`;
+                loginCell.id = `loginTime-${userId}`;
+                signoutCell.id = `signoutTime-${userId}`;
+                emailCell.textContent = email;
+                productivityCell.textContent = productivity;
+                breakCell.textContent = breakHours;
+                loginCell.textContent = loginTime;
+                activityCell.textContent = activity;
+                signoutCell.textContent = signoutTime;
+
+                row.appendChild(emailCell);
+                row.appendChild(loginCell);
+                row.appendChild(productivityCell);
+                row.appendChild(breakCell);
+                row.appendChild(activityCell);
+                row.appendChild(signoutCell);
+
+                document.getElementById('emailTableBody').appendChild(row);
+
+                onSnapshot(dailyDataDocRef, (doc) => {
+                    const updatedData = doc.data();
+                    document.getElementById(`activity-${userId}`).textContent = updatedData.currentActivity;
+                    document.getElementById(`productivity-${userId}`).textContent = secondsToHMS(updatedData.production);
+                    document.getElementById(`break-${userId}`).textContent = secondsToHMS(updatedData.break);
+                    document.getElementById(`loginTime-${userId}`).textContent = updatedData.loginTime;
+                    document.getElementById(`signoutTime-${userId}`).textContent = updatedData.signOutTime;
+                });
+                // }
+            }
+        }
+
+        function secondsToHMS(seconds) {
+            if (!seconds) return 'N/A';
+            const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        async function filterUsersByProcess() {
+            const selectedProcess = document.getElementById('processDropdown').value;
+            selectedProcessExcel = selectedProcess;
+            if (!selectedProcess) return;
+
+            const q = query(collection(db, 'users'), where('process', '==', selectedProcess));
+            const usersSnapshot = await getDocs(q);
+            const emailTableBody = document.getElementById('emailTableBody');
+            emailTableBody.innerHTML = ''; // Clear previous results
+            lastVisibleUser = usersSnapshot.docs[usersSnapshot.docs.length - 1];
+
+            for (const userDoc of usersSnapshot.docs) {
+                await addUserToTable(userDoc);
+            }
+        }
+
+        async function loadMoreUsers() {
+            const selectedProcess = document.getElementById('processDropdown').value;
+            if (!selectedProcess || !lastVisibleUser) return;
+
+            const q = query(collection(db, 'users'), where('process', '==', selectedProcess), startAfter(lastVisibleUser));
+            const usersSnapshot = await getDocs(q);
+            lastVisibleUser = usersSnapshot.docs[usersSnapshot.docs.length - 1];
+
+            for (const userDoc of usersSnapshot.docs) {
+                await addUserToTable(userDoc);
+            }
+        }
+
+        function resetFilters() {
+            selectedDate = "";  // Reset global variable
+            document.getElementById('datePicker')._flatpickr.clear();  // Clear date picker
+            document.getElementById('processDropdown').selectedIndex = 0;  // Reset dropdown to default value
+            document.getElementById('emailTableBody').innerHTML = '';  // Clear the table body
+            console.log("Filters reset.");
+        }
+
+
+        function exportTableToExcel() {
+            const table = document.getElementById("user-table");
+            const workbook = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+            const filename = `EmployeeActivity_${selectedProcessExcel || 'AllProcesses'}_${selectedDate || 'NoDate'}.xlsx`;
+            XLSX.writeFile(workbook, filename);
+        }
+
+        window.filterUsersByProcess = filterUsersByProcess;
+        window.loadMoreUsers = loadMoreUsers;
+        window.resetFilters = resetFilters;
+        window.exportTableToExcel = exportTableToExcel;
+       
+    </script>
+</body>
+
+</html>

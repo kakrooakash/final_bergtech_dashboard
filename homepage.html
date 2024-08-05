@@ -4,26 +4,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Homepage</title>
+    <title>अन्वेषण Anvesana</title>
     <link rel="stylesheet" href="homepage.css">
-    <script src="https://kit.fontawesome.com/bdedc8c31a.js" crossorigin="anonymous"></script>
+    <!-- <script src="https://kit.fontawesome.com/bdedc8c31a.js" crossorigin="anonymous"></script> -->
 </head>
 
 <body>
     <header>
         <img src="Images/berg.png" alt="Logo">
+        <div id="designation-container" class="nav-item"></div>
         <nav>
             <ul>
-                <li id="prod-timer">Production Time: 00:00:00</li>
-                <li id="break-timer">Break Time: 00:00:00</li>
-                <li id="prod_db">DBP</li>
-                <li id="break_db">DBB</li>
+                <li id="prod-timer" hidden></li>
+                <li id="break-timer" hidden>Break Time: 00:00:00</li>
+                <span id="timerDisplay"></span>
+                <span id="activityDisplay"></span>
+                <li id="prod_db">Production:00:00:00</li>
+                <li id="break_db">Break: 00:00:00</li>
+                <!-- <p style="color: red;" id="running_status"></p> -->
                 <button id="sign-out" class="signout">Sign Out</button>
             </ul>
         </nav>
     </header>
+    <div>
 
+    </div>
     <div class="container">
+        <div id="idlePopup" class="popup">
+            <p>You have been idle for 1 minute.</p>
+            <button onclick="closePopup()">OK</button>
+        </div>
         <div class="form-column">
             <div id="profile-card">
                 <h2>Employee Profile</h2>
@@ -33,8 +43,9 @@
                 <div>Process: <span id="loggedProcess" name="loggedProcess"></span></div>
                 <div>Timing:
                     <span id="loggedShift" name="loggedShift"></span>
-                    <i id="editShiftIcon" class="fa fa-edit" style="cursor: pointer;"></i>
+                    <!-- <i id="editShiftIcon" class="fa fa-edit" style="cursor: pointer;"></i> -->
                 </div>
+                <div>Designation: <span id="designation" name="designation"></span></div>
                 <div id="shiftPopup" class="popup">
                     <div class="popup-content">
                         <span class="close-btn">&times;</span>
@@ -87,13 +98,12 @@
                         <option value="Break">Bio Break</option>
                         <option value="Break">Lunch Break</option>
                         <option value="Production">Training</option>
+                        <option value="Production">Meeting</option>
                     </select>
                     <div class="buttons">
-                        <button id="startButton" class="buttontimmer">Start</button>
-                        <button class="buttontimmer" id="endButton" onclick="setCurrentDate()">
-                            <span id="submit-text">End</span>
-                            <span id="loading-spinner" class="spinner-border spinner-border-sm" style="display: none;"
-                                role="status" aria-hidden="true"></span>
+                        <button id="startButton" class="buttontimmer">START</button>
+                        <button class="buttontimmer" id="endButton" onclick="setCurrentDate()" disabled>
+                            END
                         </button>
                     </div>
                 </form>
@@ -166,7 +176,7 @@
 
         let productionTotal = 0;
         let breakTotal = 0;
-
+        let timerInterval;
         let prodStartTime;
         let breakStartTime;
 
@@ -177,12 +187,10 @@
         const scriptURL = 'https://script.google.com/macros/s/AKfycby_-Sg6pPeZC833QU_dM8bH7tSAvQngjz5c0iJlBo-I-cWNdN8BNaU_3WrXfS-gPm7M5g/exec';
         const form = document.forms['contact-form'];
 
-        let prodElapsedTime = localStorage.getItem('prodElapsedTime') ? parseInt(localStorage.getItem('prodElapsedTime')) : 0;
-        let breakElapsedTime = localStorage.getItem('breakElapsedTime') ? parseInt(localStorage.getItem('breakElapsedTime')) : 0;
-        let currentActivity = localStorage.getItem('currentActivity') || 'none';
-        let currentProcess = localStorage.getItem('currentProcess') || 'none';
-        let startTime = localStorage.getItem('startTime') ? new Date(localStorage.getItem('startTime')) : null;
-        let lastUpdateTime = localStorage.getItem('lastUpdateTime') ? new Date(localStorage.getItem('lastUpdateTime')) : null;
+
+        let currentActivity;
+        let currentProcess;
+        let startTime;
         let hiddenTime;
 
 
@@ -215,6 +223,14 @@
                             document.getElementById('loggedEmployeeId').innerText = userData.employeeid;
                             document.getElementById('loggedProcess').innerText = userData.process;
                             document.getElementById('loggedShift').innerText = userData.timings;
+                            document.getElementById('designation').innerText = userData.designation;
+                            if (userData.designation === "TL") {
+                                const clickableText = document.createElement('a');
+                                clickableText.href = "tldashboard.html";
+                                clickableText.innerText = "TL Dashboard";
+                                clickableText.target = "_blank";
+                                document.getElementById('designation-container').appendChild(clickableText);
+                            }
                         } else {
                             console.log("No document found");
                         }
@@ -222,9 +238,22 @@
             }
         });
 
-        document.getElementById('editShiftIcon').addEventListener('click', () => {
-            document.getElementById('shiftPopup').style.display = 'block';
+        document.addEventListener('DOMContentLoaded', function () {
+            const uid = localStorage.getItem('loggedInUserId');
+            if (uid) {
+
+            } else {
+                window.location.href = 'index.html';
+            }
         });
+
+
+
+
+
+        // document.getElementById('editShiftIcon').addEventListener('click', () => {
+        //     document.getElementById('shiftPopup').style.display = 'block';
+        // });
 
         // Close the popup when the close button is clicked
         document.querySelector('.close-btn').addEventListener('click', () => {
@@ -343,8 +372,6 @@
                 });
         });
 
-
-
         document.addEventListener('DOMContentLoaded', (event) => {
             const loggedInUserId = localStorage.getItem('loggedInUserId');
             const colRef = collection(db, "EmployeeActivity", loggedInUserId, "activity");
@@ -356,13 +383,13 @@
                         const activity = activityData.activity;
                         const difference = activityData.difference;
                         const date = activityData.date;
-                        console.log(activity, difference, date);
+
                         var now = new Date();
                         var year = now.getFullYear();
                         var month = String(now.getMonth() + 1).padStart(2, '0');
                         var day = String(now.getDate()).padStart(2, '0');
                         var formattedDate = year + '-' + month + '-' + day;
-                        console.log(formattedDate);
+
                         if (formattedDate == date) {
                             if (activity == "Production") {
                                 productionTotal += parseFloat(difference, 10);
@@ -384,174 +411,209 @@
                     const minute = Math.floor((breakTotal % 3600) / 60);
                     const sec = breakTotal % 60;
 
-
-                    document.getElementById('prod_db').innerText = `${hours}:${minutes}:${secs}`;
-                    document.getElementById('break_db').innerText = `${hour}:${minute}:${sec}`;
-                    console.log(productionTotal, breakTotal);
+                    let a;
+                    let b;
+                    a = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                    b = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+                    console.log(a);
+                    console.log(b);
+                    document.getElementById('prod_db').innerText = 'Production: ' + a;
+                    document.getElementById('break_db').innerText = 'Break: ' + b;
 
                     pieChart(productionTotal, breakTotal);
+                    console.log(productionTotal, breakTotal);
                 })
                 .catch((error) => {
                     console.error("Error getting documents: ", error);
                 });
         });
 
-        document.getElementById('sign-out').addEventListener('click', () => {
-            var username = document.getElementById('loggedUserName').innerHTML;
-            var employeeid = document.getElementById('loggedEmployeeId').innerHTML;
-            var process = document.getElementById('loggedProcess').innerHTML;
+        document.getElementById('sign-out').addEventListener('click', async () => {
+            var username = document.getElementById('loggedUserName').innerText;
+            var employeeid = document.getElementById('loggedEmployeeId').innerText;
+            var process = document.getElementById('loggedProcess').innerText;
+
             var now = new Date();
             var year = now.getFullYear();
             var month = String(now.getMonth() + 1).padStart(2, '0');
             var day = String(now.getDate()).padStart(2, '0');
-            var formattedDate = year + '-' + month + '-' + day;
+            var formattedDate = `${year}-${month}-${day}`;
+            var formattedTime = now.toTimeString().split(' ')[0];
+
             const loggedInUserId = localStorage.getItem('loggedInUserId');
 
-            console.log(username, employeeid, process);
-            var prod;
-            var bre;
             const userConfirmed = confirm('Are you sure you want to sign out? \nYour production data will be submitted.');
             if (userConfirmed) {
                 if (loggedInUserId) {
-                    const docRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
-                    getDoc(docRef)
-                        .then((docsnap) => {
-                            if (docsnap.exists()) {
-                                const userData = docsnap.data();
-                                prod = userData.production;
-                                bre = userData.break;
-                                const formData = new FormData();
-                                formData.append('date', formattedDate);
-                                formData.append('username', username);
-                                formData.append('employeeid', employeeid);
-                                formData.append('process', process);
-                                formData.append('production', prod / (60 * 60));
-                                formData.append('break', bre / (60 * 60));
-                                return fetch(scriptURL2, { method: 'POST', body: formData });
+                    if (document.getElementById('startButton').disabled == true) {
+                        alert("Please end the activity before Signout");
+                    }
+
+                    else {
+                        try {
+                            const dailyDataDocRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
+                            const dailyDataDoc = await getDoc(dailyDataDocRef);
+                            if (!dailyDataDoc.exists() || !dailyDataDoc.data().signOutTime) {
+                                // Add signOutTime field if it doesn't exist
+                                await setDoc(dailyDataDocRef, {
+                                    signOutTime: formattedTime
+                                }, { merge: true });
                             } else {
-                                throw new Error("No document found");
+                                // Update signOutTime field if it exists
+                                await updateDoc(dailyDataDocRef, {
+                                    signOutTime: formattedTime
+                                });
                             }
-                        })
-                        .then(() => {
-                            console.log("Data sent to Firestore successfully.");
+
                             // Sign out the user
-                            return auth.signOut();
-                        })
-                        .then(() => {
-                            stopTimer('Production');
-                            stopTimer('Break');
-                            prodElapsedTime = 0;
-                            breakElapsedTime = 0;
-                            currentActivity = 'none';
-                            startTime = null;
+                            await auth.signOut();
+
+                            // Clear local storage and reset timers
                             localStorage.removeItem('prodElapsedTime');
                             localStorage.removeItem('breakElapsedTime');
                             localStorage.removeItem('currentActivity');
                             localStorage.removeItem('startTime');
-                            displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
-                            displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
+                            localStorage.removeItem('loggedInUserId');
+
+                            // Clear UI elements
                             document.getElementById('startTime').innerText = '';
                             document.getElementById('endTime').innerText = '';
 
-                            alert('User signed out successfully.');
                             window.location.replace("index.html");
-                        })
-                        .catch(error => {
-                            console.error("Error during sign-out process:", error);
-                        });
+                        } catch (error) {
+                            console.error('Error during sign out process:', error);
+                            alert('Error signing out. Please try again.');
+                        }
+                    }
+                } else {
+                    alert('No user is currently logged in.');
                 }
+
+
             }
         });
 
 
+        function saveState() {
+            localStorage.setItem('startTime', startTime);
+            localStorage.setItem('currentActivity', currentActivity);
+            localStorage.setItem('currentProcess', currentProcess);
+            localStorage.setItem('activityDropdown', document.getElementById('activity').value);
+            localStorage.setItem('processDropdown', document.getElementById('curr-process').value);
+            localStorage.setItem('startButtonDisabled', document.getElementById('startButton').disabled);
+            localStorage.setItem('endButtonDisabled', document.getElementById('endButton').disabled);
+            localStorage.setItem('activityDisabled', document.getElementById('activity').disabled);
+            localStorage.setItem('processDisabled', document.getElementById('curr-process').disabled);
 
 
-        function startTimer(activity) {
-            function updateTimer() {
-                const now = new Date();
-                const elapsed = now - lastUpdateTime;
-                lastUpdateTime = now;
-                localStorage.setItem('lastUpdateTime', lastUpdateTime.toISOString());
+        }
 
-                if (activity === 'Production') {
-                    prodElapsedTime += elapsed;
-                    localStorage.setItem('prodElapsedTime', prodElapsedTime);
-                    displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
-                } else if (activity === 'Break') {
-                    breakElapsedTime += elapsed;
-                    localStorage.setItem('breakElapsedTime', breakElapsedTime);
-                    displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
-                }
 
-                if (currentActivity === activity) {
-                    requestAnimationFrame(updateTimer);
-                }
+        function loadState() {
+            startTime = localStorage.getItem('startTime');
+            currentActivity = localStorage.getItem('currentActivity');
+            currentProcess = localStorage.getItem('currentProcess');
+
+            if (startTime && currentActivity && currentProcess) {
+                startTime = new Date(startTime);
+                document.getElementById('startTime').innerText = startTime.toLocaleTimeString();
+                document.getElementById('activity').value = localStorage.getItem('activityDropdown');
+                document.getElementById('curr-process').value = localStorage.getItem('processDropdown');
+                document.getElementById('startButton').disabled = (localStorage.getItem('startButtonDisabled') === 'true');
+                document.getElementById('endButton').disabled = (localStorage.getItem('endButtonDisabled') === 'true');
+                document.getElementById('activity').disabled = (localStorage.getItem('activityDisabled') === 'true');
+                document.getElementById('curr-process').disabled = (localStorage.getItem('processDisabled') === 'true');
+
             }
+            if (localStorage.getItem('startTime')) {
+                startTime = new Date(localStorage.getItem('startTime'));
+                currentActivity = localStorage.getItem('currentActivity');
+                currentProcess = localStorage.getItem('currentProcess');
 
-            if (activity === 'Production') {
-                cancelAnimationFrame(prodInterval);
-                prodInterval = requestAnimationFrame(updateTimer);
-            } else if (activity === 'Break') {
-                cancelAnimationFrame(breakInterval);
-                breakInterval = requestAnimationFrame(updateTimer);
+                document.getElementById('activityDisplay').innerText = localStorage.getItem('activity');
+
+                document.getElementById('activity').disabled = true;
+                document.getElementById('curr-process').disabled = true;
+                document.getElementById('startButton').disabled = true;
+                document.getElementById('endButton').disabled = false;
+
+                // Resume the timer
+                timerInterval = setInterval(updateTimerDisplay, 1000);
             }
         }
 
-        function stopTimer(activity) {
-            if (activity === 'Production') {
-                cancelAnimationFrame(prodInterval);
-            } else if (activity === 'Break') {
-                cancelAnimationFrame(breakInterval);
-            }
-        }
-
-        function displayTime(milliseconds, elementId, prefix) {
-            const totalSeconds = Math.floor(milliseconds / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-
-            const element = document.getElementById(elementId);
-            element.textContent = `${prefix}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-            if (elementId === 'break-timer' && hours >= 1) {
-                element.style.color = 'red';
-            } else {
-                element.style.color = ''; // Reset to default color
-            }
-        }
-
-        document.getElementById('startButton').addEventListener('click', (event) => {
-            event.preventDefault();
-
+        function checkDropdownValues() {
             const activity = document.getElementById('activity').value;
             const process = document.getElementById('curr-process').value;
-            startTime = new Date();
-            lastUpdateTime = startTime;
-            localStorage.setItem('startTime', startTime.toISOString());
-            localStorage.setItem('lastUpdateTime', lastUpdateTime.toISOString());
 
+            if (activity === 'none' || process === 'none') {
+                return false;
+            }
+            return true;
+        }
+
+
+
+
+        document.getElementById('startButton').addEventListener('click', async (event) => {
+            event.preventDefault();
+            const activity = document.getElementById('activity').value;
+            const process = document.getElementById('curr-process').value;
+            if (!checkDropdownValues()) {
+                alert('Please select process and activity before starting.');
+                return;
+            }
+
+            startTime = new Date();
+
+            let statusText = "";
+
+            if (activity == "Production") {
+                statusText = "Production timer is running";
+            } else if (activity == "Break") {
+                statusText = "Break timer is running";
+            }
 
             if (activity !== 'none' && process !== 'none') {
                 currentActivity = activity;
                 currentProcess = process;
-                localStorage.setItem('currentActivity', currentActivity);
-                localStorage.setItem('currentProcess', currentProcess);
-                startTimer(activity);
+
                 customAlerttwo();
                 document.getElementById('endButton').disabled = false;
                 document.getElementById('activity').disabled = true;
                 document.getElementById('curr-process').disabled = true;
                 document.getElementById('startButton').disabled = true;
+
+                // Start the timer
+                timerInterval = setInterval(updateTimerDisplay, 1000);
+
+
+                const loggedInUserId = localStorage.getItem('loggedInUserId');
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const formattedDate = year + '-' + month + '-' + day;
+
+                const docRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
+
+                try {
+                    await setDoc(docRef, { currentActivity: activity }, { merge: true });
+                    console.log("Current activity added to database");
+                } catch (error) {
+                    console.error("Error adding current activity to database: ", error);
+                }
+
             }
             document.getElementById('startTime').innerText = startTime.toLocaleTimeString();
+            saveState();
+
         });
 
-        document.getElementById('endButton').addEventListener('click', (event) => {
+        document.getElementById('endButton').addEventListener('click', async (event) => {
             event.preventDefault();
-            document.getElementById('submit-text').style.display = 'none';
-            document.getElementById('loading-spinner').style.display = 'inline-block';
             endActivity();
+
         });
 
         function endActivity() {
@@ -560,16 +622,11 @@
             const formattedEndTime = endTime.toLocaleTimeString();
             const sTime = document.getElementById('startTime').innerText;
             const proc = document.getElementById('curr-process').value;
-
+            // document.getElementById('running_status').innerText = "";
             if (currentActivity !== 'none') {
-                stopTimer(currentActivity);
                 currentActivity = 'none';
-                localStorage.removeItem('currentActivity');
-                localStorage.removeItem('currentProcess');
             }
 
-            document.getElementById('loading-spinner').style.display = 'none';
-            document.getElementById('submit-text').style.display = 'inline';
             document.getElementById('endTime').innerText = formattedEndTime;
             if (startTime) {
                 timeDiff = Math.floor((endTime - startTime) / 1000); // Time difference in seconds
@@ -578,65 +635,109 @@
                 console.error('Start time is not set');
             }
 
-            localStorage.removeItem('startTime');
-            localStorage.removeItem('lastUpdateTime');
             var username = document.getElementById('loggedUserName').innerHTML;
             var employeeid = document.getElementById('loggedEmployeeId').innerHTML;
             var eTime = document.getElementById('endTime').innerText;
             var a = document.getElementById('activity').value;
 
+            const seconds = timeDiff;
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
 
-            console.log(username);
-            console.log(process);
-            console.log(employeeid);
-            console.log(sTime);
-            console.log(eTime);
-            console.log(timeDiff);
+            const formattedHrs = hrs.toString().padStart(2, '0');
+            const formattedMins = mins.toString().padStart(2, '0');
+            const formattedSecs = secs.toString().padStart(2, '0');
 
-            // var now = new Date();
-            // var year = now.getFullYear();
-            // var month = String(now.getMonth() + 1).padStart(2, '0');
-            // var day = String(now.getDate()).padStart(2, '0');
-            // var formattedDate = year + '-' + month + '-' + day;
-            // const formData = new FormData();
+            alert("Activity ended at: " + eTime + "\nDuration is: " + `${formattedHrs}:${formattedMins}:${formattedSecs}`);
 
-            // formData.append('date', formattedDate);
-            // formData.append('username', username);
-            // formData.append('employeeid', employeeid);
-            // formData.append('process', proc);
-            // formData.append('activity', a);
-            // formData.append('start-time', sTime);
-            // formData.append('end-time', eTime);
-            // formData.append('duration', timeDiff / (60 * 60));
-
-            // fetch(scriptURL, { method: 'POST', body: formData })
-            //     .then(response => {
-            //         if (response.ok) {
-            //             // Optionally reload or perform other actions after success
-            //         } else {
-            //             throw new Error('Failed to send data to Google Sheets.');
-            //         }
-            //     })
-            //     .catch(error => console.error('Error sending data to Google Sheets:', error));
+            localStorage.removeItem('startTime');
+            localStorage.removeItem('currentActivity');
+            localStorage.removeItem('currentProcess');
+            localStorage.removeItem('activityDropdown');
+            localStorage.removeItem('processDropdown');
+            localStorage.removeItem('startButtonDisabled');
+            localStorage.removeItem('endButtonDisabled');
+            localStorage.removeItem('activityDisabled');
+            localStorage.removeItem('processDisabled');
+            localStorage.removeItem('running_status');
 
             document.getElementById('activity').disabled = false;
             document.getElementById('startButton').disabled = false;
             document.getElementById('curr-process').disabled = false;
             document.getElementById('endButton').disabled = true;
 
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var formattedDate = year + '-' + month + '-' + day;
+            const formData = new FormData();
+
+            formData.append('date', formattedDate);
+            formData.append('username', username);
+            formData.append('employeeid', employeeid);
+            formData.append('process', proc);
+            formData.append('activity', a);
+            formData.append('start-time', sTime);
+            formData.append('end-time', eTime);
+            formData.append('duration', timeDiff / (60 * 60));
+
+            fetch(scriptURL, { method: 'POST', body: formData })
+                .then(response => {
+                    if (response.ok) {
+                        console.log("Data sent to sheets");
+                    } else {
+                        throw new Error('Failed to send data to Google Sheets.');
+                    }
+                })
+                .catch(error => console.error('Error sending data to Google Sheets:', error));
+
             showAlert();
             const reprodtime = document.getElementById('prod-timer').innerHTML;
             const reproddbtime = document.getElementById('prod_db').innerHTML;
-            console.log(reprodtime, reproddbtime);
 
+            // Stop the timer
+            clearInterval(timerInterval);
 
+            const loggedInUserId = localStorage.getItem('loggedInUserId');
+            const docRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
+            try {
+                setDoc(docRef, { currentActivity: "Idle" }, { merge: true });
+                console.log("Current activity set to null in the database");
+            } catch (error) {
+                console.error("Error setting current activity to null in the database: ", error);
+            }
+
+            // Refresh the page after 7 seconds
+            setTimeout(() => {
+                location.reload();
+            }, 7000);
+
+        }
+
+        function updateTimerDisplay() {
+            if (startTime) {
+                const now = new Date();
+                const elapsed = Math.floor((now - startTime) / 1000); // Elapsed time in seconds
+
+                const hrs = Math.floor(elapsed / 3600);
+                const mins = Math.floor((elapsed % 3600) / 60);
+                const secs = elapsed % 60;
+
+                const formattedHrs = hrs.toString().padStart(2, '0');
+                const formattedMins = mins.toString().padStart(2, '0');
+                const formattedSecs = secs.toString().padStart(2, '0');
+
+                document.getElementById('timerDisplay').innerText = `${formattedHrs}:${formattedMins}:${formattedSecs}`;
+            }
         }
 
         document.getElementById('activity').addEventListener('change', (event) => {
             const selectedActivity = event.target.value;
             if (selectedActivity !== 'none' && selectedActivity !== currentActivity) {
                 if (currentActivity !== 'none') {
-                    stopTimer(currentActivity);
+                    // stopTimer(currentActivity);
                 }
                 currentActivity = selectedActivity;
                 localStorage.setItem('currentActivity', currentActivity);
@@ -647,70 +748,6 @@
             const selectedProcess = event.target.value;
             currentProcess = selectedProcess;
             localStorage.setItem('currentProcess', currentProcess);
-        });
-
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden' && currentActivity !== 'none') {
-                hiddenTime = new Date();
-                localStorage.setItem('hiddenTime', hiddenTime.toISOString());
-            } else if (document.visibilityState === 'visible' && currentActivity !== 'none') {
-                const now = new Date();
-                hiddenTime = new Date(localStorage.getItem('hiddenTime'));
-                const elapsedHidden = now - hiddenTime;
-                lastUpdateTime = now;
-                localStorage.setItem('lastUpdateTime', lastUpdateTime.toISOString());
-
-                if (currentActivity === 'Production') {
-                    prodElapsedTime += elapsedHidden;
-                    localStorage.setItem('prodElapsedTime', prodElapsedTime);
-                    startTimer('Production');
-                } else if (currentActivity.startsWith('Break')) {
-                    breakElapsedTime += elapsedHidden;
-                    localStorage.setItem('breakElapsedTime', breakElapsedTime);
-                    startTimer('Break');
-                }
-            }
-        });
-
-        window.addEventListener('load', () => {
-            if (startTime) {
-                const now = new Date();
-                const elapsed = now - new Date(lastUpdateTime);
-                lastUpdateTime = now;
-                localStorage.setItem('lastUpdateTime', lastUpdateTime.toISOString());
-
-                if (currentActivity === 'Production') {
-                    prodElapsedTime += elapsed;
-                    localStorage.setItem('prodElapsedTime', prodElapsedTime);
-                    startTimer('Production');
-                    displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
-                } else if (currentActivity.startsWith('Break')) {
-                    breakElapsedTime += elapsed;
-                    localStorage.setItem('breakElapsedTime', breakElapsedTime);
-                    startTimer('Break');
-                    displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
-                }
-            }
-
-            if (startTime) {
-                document.getElementById('startTime').innerText = new Date(startTime).toLocaleTimeString();
-            }
-
-            if (currentActivity !== 'none') {
-                document.getElementById('activity').value = currentActivity;
-                document.getElementById('endButton').disabled = false;
-                document.getElementById('activity').disabled = true;
-                document.getElementById('curr-process').disabled = true;
-                document.getElementById('startButton').disabled = true;
-            }
-
-            if (currentProcess !== 'none') {
-                document.getElementById('curr-process').value = currentProcess;
-            }
-
-            displayTime(prodElapsedTime, 'prod-timer', 'Production Time: ');
-            displayTime(breakElapsedTime, 'break-timer', 'Break Time: ');
         });
 
         async function fetchProductivityData() {
@@ -734,7 +771,6 @@
             });
 
             addProductivity = addProductivity / (60 * 60);
-            console.log(addProductivity);
             productivityData.push(parseFloat(addProductivity, 10)).toFixed(1);
             return { dateLabels, productivityData };
         }
@@ -771,7 +807,6 @@
             return parseFloat(secondsDiff);
         }
 
-
         function setCurrentDate() {
             var now = new Date();
             var year = now.getFullYear();
@@ -783,7 +818,7 @@
 
         async function sendTimeToFirebase(start, end, timeDiff) {
             event.preventDefault();
-            console.log("Hii");
+
             const activity = document.getElementById("activity").value;
             const date = document.getElementById("currentDate").value;
             const loggedInUserId = localStorage.getItem('loggedInUserId');
@@ -794,6 +829,7 @@
             var month = String(now.getMonth() + 1).padStart(2, '0');
             var day = String(now.getDate()).padStart(2, '0');
             var formattedDate = year + '-' + month + '-' + day;
+
             try {
                 const docRef = collection(db, "EmployeeActivity", loggedInUserId, "activity");
                 // Set data
@@ -809,28 +845,27 @@
 
                 const dailyRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
                 const dailyDoc = await getDoc(dailyRef);
-                const timeParts = timeDiff;
                 if (dailyDoc.exists()) {
+                    console.log("Data base is there");
                     const data = dailyDoc.data();
                     if (activity === 'Production') {
                         await updateDoc(dailyRef, {
                             production: (data.production || 0) + timeDiff
                         });
                     } else {
+
                         await updateDoc(dailyRef, {
                             break: (data.break || 0) + timeDiff
                         });
                     }
                 } else {
+                    console.log("Data base is not there");
                     await setDoc(dailyRef, {
                         date: formattedDate,
                         production: activity === 'Production' ? timeDiff : 0,
-                        break: activity !== 'Production' ? timeDiff : 0
+                        break: activity !== 'Production' ? timeDiff : 0,
                     });
                 }
-
-                document.getElementById('loading-spinner').style.display = 'none';
-                document.getElementById('submit-text').style.display = 'inline';
             } catch (e) {
                 console.error("Error writing document: ", e);
             }
@@ -868,6 +903,7 @@
                     const data = dailyDoc.data();
                     const productionMinutes = data.production / (60 * 60);
                     const breakMinutes = data.break / (60 * 60);
+
                     productionData.push(productionMinutes);
                     breakData.push(breakMinutes);
                 } else {
@@ -878,14 +914,7 @@
             return { labels, productionData, breakData };
         }
 
-        function logState() {
-    console.log("prodElapsedTime:", prodElapsedTime);
-    console.log("breakElapsedTime:", breakElapsedTime);
-    console.log("currentActivity:", currentActivity);
-    console.log("currentProcess:", currentProcess);
-    console.log("startTime:", startTime);
-    console.log("lastUpdateTime:", lastUpdateTime);
-}
+
 
         async function createProductionChart() {
             const ctx = document.getElementById('productionChart').getContext('2d');
@@ -941,13 +970,16 @@
         // Call this function to create the chart
         createProductionChart();
 
+
+
         function pieChart(prod, bre) {
-            let x = (prod / (60 * 60));
-            let y = (bre / (60 * 60));
-            console.log("Inside pie chart" + x, y);
+
+            let totalSeconds = prod + bre;
+            let productivityPercentage = (prod / totalSeconds) * 100;
+            let breakPercentage = (bre / totalSeconds) * 100;
 
             const xValues = ["Productivity", "Break"];
-            const yValues = [x, y];
+            const yValues = [productivityPercentage, breakPercentage];
             const barColors = [
                 "#6F40A1",
                 "#50E4E4",
@@ -965,20 +997,17 @@
                 options: {
                     title: {
                         display: true,
-                        text: "Productivity and Break",
+                        text: "Productivity and Break Percentages",
                         font: {
                             size: 18 // You can adjust the font size here
                         }
                     },
-                    tooltip: {
+                    tooltips: {
                         callbacks: {
-                            title: function () {
-                                return "Productivity and Break";
-                            },
                             label: function (tooltipItem) {
-                                let label = xValues[tooltipItem.dataIndex];
-                                let value = yValues[tooltipItem.dataIndex];
-                                return `${label}: ${value.toFixed(2)} hours`;
+                                let label = xValues[tooltipItem.index];
+                                let value = xValues[0].data[tooltipItem.index];
+                                return `${label}: ${value.toFixed(2)}%`;// Ensure % symbol is added here
                             }
                         }
                     }
@@ -990,21 +1019,22 @@
 
 
         function pieChart2(upgrad, shopsy, mpqcfk, hitl, rqa, ugc, vsqa, vernac, allen, counter, labelling, rsqa, st, mis, others) {
-            let a = (upgrad) / (60 * 60);
-            let b = (shopsy) / (60 * 60);
-            let c = (mpqcfk) / (60 * 60);
-            let d = (hitl) / (60 * 60);
-            let e = (rqa) / (60 * 60);
-            let f = (ugc) / (60 * 60);
-            let g = (vsqa) / (60 * 60);
-            let h = (vernac) / (60 * 60);
-            let i = (allen) / (60 * 60);
-            let j = (counter) / (60 * 60);
-            let k = (labelling) / (60 * 60);
-            let l = (rsqa) / (60 * 60);
-            let m = (st) / (60 * 60);
-            let n = (mis) / (60 * 60);
-            let o = (others) / (60 * 60);
+            let totalHours = (upgrad + shopsy + mpqcfk + hitl + rqa + ugc + vsqa + vernac + allen + counter + labelling + rsqa + st + mis + others);
+            let a = (upgrad / totalHours) * 100;
+            let b = (shopsy / totalHours) * 100;
+            let c = (mpqcfk / totalHours) * 100;
+            let d = (hitl / totalHours) * 100;
+            let e = (rqa / totalHours) * 100;
+            let f = (ugc / totalHours) * 100;
+            let g = (vsqa / totalHours) * 100;
+            let h = (vernac / totalHours) * 100;
+            let i = (allen / totalHours) * 100;
+            let j = (counter / totalHours) * 100;
+            let k = (labelling / totalHours) * 100;
+            let l = (rsqa / totalHours) * 100;
+            let m = (st / totalHours) * 100;
+            let n = (mis / totalHours) * 100;
+            let o = (others / totalHours) * 100;
 
             const labels = ["Upgrad", "Shopsy", "Flipkart", "HITL", "RQA", "UGC", "VSQA", "Vernac", "Allen", "Counter", "Labelling", "RSQA", "Clear Trip", "MIS", "Others"];
             const yValues = [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o];
@@ -1042,22 +1072,27 @@
                     },
                     plugins: {
                         legend: {
-                            display: true  // Show legend only for values that are not zero
+                            display: true, // Show legend only for values that are not zero
+                            labels: {
+                                filter: function (legendItem, chartData) {
+                                    return chartData.datasets[0].data[legendItem.index] > 0;
+                                }
+                            }
                         },
                         tooltip: {
                             callbacks: {
                                 label: function (tooltipItem) {
                                     let label = filteredLabels[tooltipItem.dataIndex];
                                     let value = filteredValues[tooltipItem.dataIndex];
-                                    return `${label}: ${value.toFixed(2)} hours`;
+                                    return `${label}: ${value.toFixed(2)}%`; // Display percentage with two decimal places
                                 }
                             }
                         }
                     }
                 }
             });
-
         }
+        document.addEventListener('DOMContentLoaded', loadState);
     </script>
     <script>
 
@@ -1083,10 +1118,99 @@
             var month = String(now.getMonth() + 1).padStart(2, '0');
             var day = String(now.getDate()).padStart(2, '0');
             var formattedDate = year + '-' + month + '-' + day;
-            console.log(formattedDate);
             document.getElementById('currentDate').innerText = formattedDate;
         }
     </script>
+    <!-- <script>
+        let idleTime = 0;
+        let idleInterval;
+        let idleLimit = 60; // 1 minute
+        let idlePopup = document.getElementById("idlePopup");
+        let lastActivityTime = Date.now();
+
+        // Retrieve stored idle time if available
+        if (localStorage.getItem("idleTime")) {
+            idleTime = parseInt(localStorage.getItem("idleTime"), 10);
+        }
+
+        // Retrieve stored last activity time if available
+        if (localStorage.getItem("lastActivityTime")) {
+            lastActivityTime = parseInt(localStorage.getItem("lastActivityTime"), 10);
+            const currentTime = Date.now();
+            idleTime += Math.floor((currentTime - lastActivityTime) / 1000);
+            lastActivityTime = currentTime;
+        }
+
+        function resetIdleTime() {
+            idleTime = 0;
+            lastActivityTime = Date.now();
+            localStorage.setItem("idleTime", idleTime);
+            localStorage.setItem("lastActivityTime", lastActivityTime);
+            broadcastActivity();
+        }
+
+        function startIdleTimer() {
+            idleInterval = setInterval(timerIncrement, 1000);
+            lastActivityTime = Date.now();
+            localStorage.setItem("lastActivityTime", lastActivityTime);
+        }
+
+        function stopIdleTimer() {
+            clearInterval(idleInterval);
+        }
+
+        function timerIncrement() {
+            const currentTime = Date.now();
+            idleTime = Math.floor((currentTime - lastActivityTime) / 1000);
+            localStorage.setItem("idleTime", idleTime);
+
+            if (idleTime >= idleLimit) {
+                idlePopup.style.display = "block";
+                stopIdleTimer();
+            }
+        }
+
+        function closePopup() {
+            idlePopup.style.display = "none";
+            resetIdleTime();
+            startIdleTimer();
+        }
+
+        function broadcastActivity() {
+            localStorage.setItem("activityEvent", Date.now());
+        }
+
+        // Event listeners to detect user activity
+        document.onmousemove = resetIdleTime;
+        document.onkeypress = resetIdleTime;
+        document.onscroll = resetIdleTime;
+        document.onclick = resetIdleTime;
+
+        // Page Visibility API to handle tab visibility changes
+        document.addEventListener("visibilitychange", function () {
+            if (document.hidden) {
+                stopIdleTimer();
+            } else {
+                startIdleTimer();
+            }
+        });
+
+        // Save the idle time to localStorage before the user leaves the page
+        window.addEventListener("beforeunload", function () {
+            localStorage.setItem("idleTime", idleTime);
+            localStorage.setItem("lastActivityTime", lastActivityTime);
+        });
+
+        // Listen for storage events to synchronize activity across tabs
+        window.addEventListener("storage", function (event) {
+            if (event.key === "activityEvent") {
+                resetIdleTime();
+            }
+        });
+
+        // Start the idle timer when the page loads
+        startIdleTimer();
+    </script> -->
 </body>
 
 </html>
