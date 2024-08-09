@@ -468,17 +468,21 @@ button:hover {
     border-radius: 10px;
 }
 
-#popup {
+.timer {
+    font-size: 10px;
+    margin-bottom: 20px;
+}
+.popup {
     display: none;
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    border: 1px solid #ccc;
-    background-color: #fff;
     padding: 20px;
-    z-index: 1000;
-  }
+    background-color: white;
+    border: 2px solid #333;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
   #overlay {
     display: none;
     position: fixed;
@@ -489,3 +493,9 @@ button:hover {
     background: rgba(0, 0, 0, 0.5);
     z-index: 500;
   }
+
+  .whatsappText{
+    font-size: 10px;
+  }
+
+  

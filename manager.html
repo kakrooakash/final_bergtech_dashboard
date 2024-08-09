@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TL Dashboard</title>
+    <title>Manager Dashboard</title>
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -13,9 +14,16 @@
 
 <body>
     <div class="container">
+        <label for="processDropdown">Select Process:</label>
         <input type="text" id="datePicker" placeholder="Select Date">
+        <select id="processDropdown" onchange="filterUsersByProcess()">
+            <option value="">Select a process</option>
+        </select>
         <button onclick="resetFilters()" class="reset-button">Reset</button>
         <button class="export-button" onclick="exportTableToExcel()">Export to Excel</button>
+        <div class="export-button-container">
+
+        </div>
         <div class="table-container">
             <table border="1" id="user-table">
                 <thead>
@@ -33,11 +41,13 @@
                 </tbody>
             </table>
         </div>
+
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-        import { getFirestore, getDoc, enableIndexedDbPersistence, updateDoc, doc, query, where, setDoc, addDoc, collection, getDocs, limit, startAfter, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+        import { initializeApp } from
+            "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+        import { getFirestore, getDoc, updateDoc, doc, query, where, setDoc, addDoc, collection, getDocs, limit, startAfter, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
 
         const firebaseConfig = {
@@ -54,6 +64,7 @@
         const auth = getAuth();
         const db = getFirestore(app);
 
+        // const USERS_PER_PAGE = 100;
         let lastVisibleUser = null;
         let selectedDate = "";
         let selectedProcessExcel = "";
@@ -65,20 +76,14 @@
                 dateFormat: "Y-m-d",
                 onChange: function (selectedDates, dateStr, instance) {
                     selectedDate = dateStr;
-
-
-                    // Call filterUsersByProcess after date is selected
-                    const process = getSelectedProcess(); // Retrieve the selected process
-                    if (process) {
-                        filterUsersByProcess(process);
-                    }
+                    console.log("Selected date:", dateStr);
                 }
             });
-
             document.getElementById("currentActivityHeader").addEventListener("click", () => {
                 sortTableByActivity();
             });
             checkUserDesignation();
+            populateDropdown();
         });
 
         async function checkUserDesignation() {
@@ -91,18 +96,17 @@
                             const docSnap = await getDoc(docRef);
                             if (docSnap.exists()) {
                                 const userData = docSnap.data();
-                                const process = userData.process;
-                                if (userData.designation !== "TL") {
+                                if (userData.designation !== "Manager") {
                                     alert("You are not authorized to access this page.");
                                     window.location.href = "notauthpage.html";
-                                } else {
-                                    filterUsersByProcess(process);
                                 }
                             } else {
                                 console.log("No document found");
+                                window.location.href = "index.html";
                             }
                         } catch (error) {
                             console.error("Error fetching user document:", error);
+                            window.location.href = "index.html";
                         }
                     } else {
                         window.location.href = "index.html";
@@ -113,36 +117,27 @@
             });
         }
 
-        function secondsToHMS(seconds) {
-            if (!seconds) return 'N/A';
-            const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
-            const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
-            const s = String(seconds % 60).padStart(2, '0');
-            return `${h}:${m}:${s}`;
+        async function fetchProcesses() {
+            const processes = new Set();
+            const usersSnapshot = await getDocs(collection(db, 'users'));
+            usersSnapshot.forEach(doc => {
+                const process = doc.data().process;
+                if (process) {
+                    processes.add(process);
+                }
+            });
+            return Array.from(processes);
         }
 
-        async function filterUsersByProcess(process) {
-            selectedProcessExcel = process;
-            if (!process) return;
-
-            // Query for both process and process1
-            const q1 = query(collection(db, 'users'), where('process', '==', process));
-
-
-            const usersSnapshot1 = await getDocs(q1);
-
-            const emailTableBody = document.getElementById('emailTableBody');
-            emailTableBody.innerHTML = ''; // Clear previous results
-
-            // Create a set to avoid duplicate users if a user has both process and process1
-            const userSet = new Set();
-
-            for (const userDoc of usersSnapshot1.docs) {
-                if (!userSet.has(userDoc.id)) {
-                    userSet.add(userDoc.id);
-                    await addUserToTable(userDoc);
-                }
-            }
+        async function populateDropdown() {
+            const processes = await fetchProcesses();
+            const dropdown = document.getElementById('processDropdown');
+            processes.forEach(process => {
+                const option = document.createElement('option');
+                option.value = process;
+                option.textContent = process;
+                dropdown.appendChild(option);
+            });
         }
 
         async function addUserToTable(userDoc) {
@@ -185,13 +180,10 @@
             const productivity = secondsToHMS(productionTotal);
             const breakHours = secondsToHMS(breakTotal);
 
-            console.log(productivity);
-            console.log(breakHours);
-
             const loginTime = dailyDataDoc.exists() && dailyDataDoc.data().loginTime ? dailyDataDoc.data().loginTime : null;
             const activity = dailyDataDoc.exists() ? dailyDataDoc.data().currentActivity : null;
             const signoutTime = dailyDataDoc.exists() ? dailyDataDoc.data().signOutTime : 'N/A';
-            
+
             if (loginTime || activity) {
                 const row = document.createElement('tr');
                 row.id = `row-${userId}`;
@@ -225,6 +217,7 @@
 
                 document.getElementById('emailTableBody').appendChild(row);
 
+                //Set up real-time updates for this user
                 onSnapshot(dailyDataDocRef, (doc) => {
                     const updatedData = doc.data();
                     document.getElementById(`activity-${userId}`).textContent = updatedData.currentActivity;
@@ -260,17 +253,51 @@
             }
         }
 
-        function getSelectedProcess() {
-            // Placeholder function to get the selected process.
-            // You may need to implement this based on your process selection logic.
-            return selectedProcessExcel; // Replace with actual logic if necessary
+        function secondsToHMS(seconds) {
+            if (!seconds) return 'N/A';
+            const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        async function filterUsersByProcess() {
+            const selectedProcess = document.getElementById('processDropdown').value;
+            selectedProcessExcel = selectedProcess;
+            if (!selectedProcess) return;
+
+            const q = query(collection(db, 'users'), where('process', '==', selectedProcess));
+            const usersSnapshot = await getDocs(q);
+            const emailTableBody = document.getElementById('emailTableBody');
+            emailTableBody.innerHTML = ''; // Clear previous results
+            lastVisibleUser = usersSnapshot.docs[usersSnapshot.docs.length - 1];
+
+            for (const userDoc of usersSnapshot.docs) {
+                await addUserToTable(userDoc);
+            }
+        }
+
+        async function loadMoreUsers() {
+            const selectedProcess = document.getElementById('processDropdown').value;
+            if (!selectedProcess || !lastVisibleUser) return;
+
+            const q = query(collection(db, 'users'), where('process', '==', selectedProcess), startAfter(lastVisibleUser));
+            const usersSnapshot = await getDocs(q);
+            lastVisibleUser = usersSnapshot.docs[usersSnapshot.docs.length - 1];
+
+            for (const userDoc of usersSnapshot.docs) {
+                await addUserToTable(userDoc);
+            }
         }
 
         function resetFilters() {
             selectedDate = "";  // Reset global variable
             document.getElementById('datePicker')._flatpickr.clear();  // Clear date picker
+            document.getElementById('processDropdown').selectedIndex = 0;  // Reset dropdown to default value
             document.getElementById('emailTableBody').innerHTML = '';  // Clear the table body
+            console.log("Filters reset.");
         }
+
 
         function exportTableToExcel() {
             const table = document.getElementById("user-table");
@@ -278,6 +305,8 @@
             const filename = `EmployeeActivity_${selectedProcessExcel || 'AllProcesses'}_${selectedDate || 'NoDate'}.xlsx`;
             XLSX.writeFile(workbook, filename);
         }
+
+
 
         function sortTableByActivity() {
             const tableBody = document.getElementById('emailTableBody');
@@ -301,8 +330,10 @@
         }
 
         window.filterUsersByProcess = filterUsersByProcess;
+        window.loadMoreUsers = loadMoreUsers;
         window.resetFilters = resetFilters;
         window.exportTableToExcel = exportTableToExcel;
+
     </script>
 </body>
 

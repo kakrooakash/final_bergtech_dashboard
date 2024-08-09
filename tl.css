@@ -42,7 +42,7 @@ select {
 }
 
 .table-container {
-    max-height: 400px; /* Adjust as needed */
+    max-height: 550px; /* Adjust as needed */
     overflow-y: auto;
 }
 

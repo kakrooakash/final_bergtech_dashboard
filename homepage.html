@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>अन्वेषण Anvesana</title>
     <link rel="stylesheet" href="homepage.css">
-    <!-- <script src="https://kit.fontawesome.com/bdedc8c31a.js" crossorigin="anonymous"></script> -->
+    <script src="https://kit.fontawesome.com/bdedc8c31a.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -30,10 +30,6 @@
 
     </div>
     <div class="container">
-        <div id="idlePopup" class="popup">
-            <p>You have been idle for 1 minute.</p>
-            <button onclick="closePopup()">OK</button>
-        </div>
         <div class="form-column">
             <div id="profile-card">
                 <h2>Employee Profile</h2>
@@ -43,7 +39,7 @@
                 <div>Process: <span id="loggedProcess" name="loggedProcess"></span></div>
                 <div>Timing:
                     <span id="loggedShift" name="loggedShift"></span>
-                    <!-- <i id="editShiftIcon" class="fa fa-edit" style="cursor: pointer;"></i> -->
+                    <i id="editShiftIcon" class="fa fa-edit" style="cursor: pointer;"></i>
                 </div>
                 <div>Designation: <span id="designation" name="designation"></span></div>
                 <div id="shiftPopup" class="popup">
@@ -73,21 +69,21 @@
                     <select type="dropdown" name="curr-process" id="curr-process" class="form-control"
                         placeholder="Process" required>
                         <option value="none">Select Process</option>
-                        <option value="Flipkart">MPQC:FK</option>
-                        <option value="Shopsy">MPQC:Shopsy</option>
+                        <option value="MPQC:FK">MPQC:FK</option>
+                        <option value="MPQC:Shopsy">MPQC:Shopsy</option>
                         <option value="Upgrad">UPGRAD</option>
-                        <option value="Hitl">HITL</option>
-                        <option value="rqa">RQA</option>
-                        <option value="ugc">UGC</option>
-                        <option value="vsqa">V.SQA</option>
-                        <option value="vernac">Vernac</option>
-                        <option value="allen">Allen</option>
-                        <option value="counter-feit">Counter feit</option>
-                        <option value="labelling">Labelling</option>
-                        <option value="rsqa">RSQA</option>
-                        <option value="ctear trip">Clear Trip</option>
-                        <option value="mis">MIS</option>
-                        <option value="others">Others</option>
+                        <option value="HITL">HITL</option>
+                        <option value="RQA">RQA</option>
+                        <option value="UGC">UGC</option>
+                        <option value="VSQA">V.SQA</option>
+                        <option value="Vernac">Vernac</option>
+                        <option value="Allen">Allen</option>
+                        <option value="Counterfeit">Counter feit</option>
+                        <option value="Labelling">Labelling</option>
+                        <option value="RSQA">RSQA</option>
+                        <option value="ClearTrip">Clear Trip</option>
+                        <option value="MIS">MIS</option>
+                        <option value="Others">Others</option>
                     </select>
                     <br><br>
                     <select type="dropdown" name="activity" id="activity" class="form-control" placeholder="Activity"
@@ -108,11 +104,11 @@
                     </div>
                 </form>
             </div>
-
         </div>
 
         <div class="output-column">
-            <h2>Employee Productivity Dashboard</h2>
+            <h2>Employee Productivity Dashboard </h2>
+            <p class="whatsappText">For any queries, Whatsapp on 7983049372 (Akash Kakroo)</p>
             <ul id="activityData" hidden></ul>
             <input type="hidden" id="currentDate" name="currentDate">
             <input type="hidden" id="timeDifference" name="timeDifference">
@@ -147,13 +143,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
-
-
+    <script src="idle.js"></script>
     <script type="module">
 
         import { initializeApp } from
             "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-        import { getFirestore, getDoc, updateDoc, doc, query, where, setDoc, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+        import { getFirestore, getDoc, enableIndexedDbPersistence, updateDoc, doc, query, where, setDoc, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
 
         const firebaseConfig = {
@@ -169,8 +164,6 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
         const db = getFirestore(app);
-
-
 
         let endTime;
 
@@ -210,7 +203,19 @@
         let mis = 0;
         let others = 0;
 
-        onAuthStateChanged(auth, (user) => {
+        enableIndexedDbPersistence(db).catch((err) => {
+            if (err.code == 'failed-precondition') {
+                // Multiple tabs open, persistence can only be enabled
+                // in one tab at a a time.
+                console.error("Persistence failed");
+            } else if (err.code == 'unimplemented') {
+                // The current browser does not support all of the
+                // features required to enable persistence
+                console.error("Persistence is not available");
+            }
+        });
+
+        onAuthStateChanged(auth, async (user) => {
             const loggedInUserId = localStorage.getItem('loggedInUserId');
             if (loggedInUserId) {
                 const docRef = doc(db, "users", loggedInUserId);
@@ -228,6 +233,13 @@
                                 const clickableText = document.createElement('a');
                                 clickableText.href = "tldashboard.html";
                                 clickableText.innerText = "TL Dashboard";
+                                clickableText.target = "_blank";
+                                document.getElementById('designation-container').appendChild(clickableText);
+                            }
+                            else if (userData.designation === "Manager") {
+                                const clickableText = document.createElement('a');
+                                clickableText.href = "manager.html";
+                                clickableText.innerText = "Manager Dashboard";
                                 clickableText.target = "_blank";
                                 document.getElementById('designation-container').appendChild(clickableText);
                             }
@@ -251,9 +263,9 @@
 
 
 
-        // document.getElementById('editShiftIcon').addEventListener('click', () => {
-        //     document.getElementById('shiftPopup').style.display = 'block';
-        // });
+        document.getElementById('editShiftIcon').addEventListener('click', () => {
+            document.getElementById('shiftPopup').style.display = 'block';
+        });
 
         // Close the popup when the close button is clicked
         document.querySelector('.close-btn').addEventListener('click', () => {
@@ -314,50 +326,50 @@
                         var day = String(now.getDate()).padStart(2, '0');
                         var formattedDate = year + '-' + month + '-' + day;
 
-                        if (formattedDate == date && activity == "Production" && process == "Upgrad") {
+                        if (formattedDate == date && activity == "Production" && process == "UPGRAD") {
                             upgrad += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "Flipkart") {
+                        else if (formattedDate == date && activity == "Production" && process == "MPQC:FK") {
                             mpqcfk += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "Shopsy") {
+                        else if (formattedDate == date && activity == "Production" && process == "MPQC:Shopsy") {
                             mpqcsho += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "Hitl") {
+                        else if (formattedDate == date && activity == "Production" && process == "HITL") {
                             hitl += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "rqa") {
+                        else if (formattedDate == date && activity == "Production" && process == "RQA") {
                             rqa += parseFloat(difference, 10);
                         }
 
-                        else if (formattedDate == date && activity == "Production" && process == "ugc") {
+                        else if (formattedDate == date && activity == "Production" && process == "UGC") {
                             ugc += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "vsqa") {
+                        else if (formattedDate == date && activity == "Production" && process == "VSQA") {
                             vsqa += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "vernac") {
+                        else if (formattedDate == date && activity == "Production" && process == "Vernac") {
                             vernac += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "allen") {
+                        else if (formattedDate == date && activity == "Production" && process == "Allen") {
                             allen += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "counter-feit") {
+                        else if (formattedDate == date && activity == "Production" && process == "Counterfeit") {
                             counter += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "labelling") {
+                        else if (formattedDate == date && activity == "Production" && process == "Labelling") {
                             labelling += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "rsqa") {
+                        else if (formattedDate == date && activity == "Production" && process == "RSQA") {
                             rsqa += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "ctear trip") {
+                        else if (formattedDate == date && activity == "Production" && process == "ClearTrip") {
                             st += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "mis") {
+                        else if (formattedDate == date && activity == "Production" && process == "MIS") {
                             mis += parseFloat(difference, 10);
                         }
-                        else if (formattedDate == date && activity == "Production" && process == "others") {
+                        else if (formattedDate == date && activity == "Production" && process == "Others") {
                             others += parseFloat(difference, 10);
                         }
                         else {
@@ -427,7 +439,7 @@
                     console.error("Error getting documents: ", error);
                 });
         });
-
+        
         document.getElementById('sign-out').addEventListener('click', async () => {
             var username = document.getElementById('loggedUserName').innerText;
             var employeeid = document.getElementById('loggedEmployeeId').innerText;
@@ -447,9 +459,7 @@
                 if (loggedInUserId) {
                     if (document.getElementById('startButton').disabled == true) {
                         alert("Please end the activity before Signout");
-                    }
-
-                    else {
+                    } else {
                         try {
                             const dailyDataDocRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
                             const dailyDataDoc = await getDoc(dailyDataDocRef);
@@ -468,16 +478,22 @@
                             // Sign out the user
                             await auth.signOut();
 
-                            // Clear local storage and reset timers
-                            localStorage.removeItem('prodElapsedTime');
-                            localStorage.removeItem('breakElapsedTime');
-                            localStorage.removeItem('currentActivity');
-                            localStorage.removeItem('startTime');
-                            localStorage.removeItem('loggedInUserId');
+                            // Clear all local storage elements
+                            localStorage.clear();
+                            if ('caches' in window) {
+                                caches.keys().then(function (cacheNames) {
+                                    cacheNames.forEach(function (cacheName) {
+                                        caches.delete(cacheName);
+                                    });
+                                });
+                            }
 
                             // Clear UI elements
                             document.getElementById('startTime').innerText = '';
                             document.getElementById('endTime').innerText = '';
+
+                            clearInterval(timerInterval);
+
 
                             window.location.replace("index.html");
                         } catch (error) {
@@ -488,8 +504,6 @@
                 } else {
                     alert('No user is currently logged in.');
                 }
-
-
             }
         });
 
@@ -509,13 +523,14 @@
         }
 
 
+      
+
         function loadState() {
-            startTime = localStorage.getItem('startTime');
+            startTime = new Date(localStorage.getItem('startTime'));
             currentActivity = localStorage.getItem('currentActivity');
             currentProcess = localStorage.getItem('currentProcess');
 
             if (startTime && currentActivity && currentProcess) {
-                startTime = new Date(startTime);
                 document.getElementById('startTime').innerText = startTime.toLocaleTimeString();
                 document.getElementById('activity').value = localStorage.getItem('activityDropdown');
                 document.getElementById('curr-process').value = localStorage.getItem('processDropdown');
@@ -524,21 +539,9 @@
                 document.getElementById('activity').disabled = (localStorage.getItem('activityDisabled') === 'true');
                 document.getElementById('curr-process').disabled = (localStorage.getItem('processDisabled') === 'true');
 
-            }
-            if (localStorage.getItem('startTime')) {
-                startTime = new Date(localStorage.getItem('startTime'));
-                currentActivity = localStorage.getItem('currentActivity');
-                currentProcess = localStorage.getItem('currentProcess');
-
-                document.getElementById('activityDisplay').innerText = localStorage.getItem('activity');
-
-                document.getElementById('activity').disabled = true;
-                document.getElementById('curr-process').disabled = true;
-                document.getElementById('startButton').disabled = true;
-                document.getElementById('endButton').disabled = false;
-
-                // Resume the timer
-                timerInterval = setInterval(updateTimerDisplay, 1000);
+                if (document.getElementById('startButton').disabled) {
+                    timerInterval = setInterval(updateTimerDisplay, 1000);
+                }
             }
         }
 
@@ -567,7 +570,6 @@
             startTime = new Date();
 
             let statusText = "";
-
             if (activity == "Production") {
                 statusText = "Production timer is running";
             } else if (activity == "Break") {
@@ -587,7 +589,6 @@
                 // Start the timer
                 timerInterval = setInterval(updateTimerDisplay, 1000);
 
-
                 const loggedInUserId = localStorage.getItem('loggedInUserId');
                 const now = new Date();
                 const year = now.getFullYear();
@@ -603,18 +604,16 @@
                 } catch (error) {
                     console.error("Error adding current activity to database: ", error);
                 }
-
             }
             document.getElementById('startTime').innerText = startTime.toLocaleTimeString();
             saveState();
-
         });
 
         document.getElementById('endButton').addEventListener('click', async (event) => {
             event.preventDefault();
             endActivity();
-
         });
+
 
         function endActivity() {
             let timeDiff;
@@ -622,7 +621,6 @@
             const formattedEndTime = endTime.toLocaleTimeString();
             const sTime = document.getElementById('startTime').innerText;
             const proc = document.getElementById('curr-process').value;
-            // document.getElementById('running_status').innerText = "";
             if (currentActivity !== 'none') {
                 currentActivity = 'none';
             }
@@ -713,7 +711,6 @@
             setTimeout(() => {
                 location.reload();
             }, 7000);
-
         }
 
         function updateTimerDisplay() {
@@ -817,49 +814,42 @@
         }
 
         async function sendTimeToFirebase(start, end, timeDiff) {
-            event.preventDefault();
-
             const activity = document.getElementById("activity").value;
-            const date = document.getElementById("currentDate").value;
             const loggedInUserId = localStorage.getItem('loggedInUserId');
-            const name = document.getElementById('loggedUserName');
             const proc = document.getElementById('curr-process').value;
-            var now = new Date();
-            var year = now.getFullYear();
-            var month = String(now.getMonth() + 1).padStart(2, '0');
-            var day = String(now.getDate()).padStart(2, '0');
-            var formattedDate = year + '-' + month + '-' + day;
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const formattedDate = year + '-' + month + '-' + day;
 
             try {
-                const docRef = collection(db, "EmployeeActivity", loggedInUserId, "activity");
-                // Set data
-                await addDoc(docRef, {
+                const activityRef = collection(db, "EmployeeActivity", loggedInUserId, "activity");
+                await addDoc(activityRef, {
                     date: formattedDate,
                     process: proc,
                     activity: activity,
                     uid: loggedInUserId,
                     difference: timeDiff,
                     startTime: start,
-                    EndTime: end,
+                    endTime: end,
                 });
 
                 const dailyRef = doc(db, "EmployeeActivity", loggedInUserId, "dailyData", formattedDate);
                 const dailyDoc = await getDoc(dailyRef);
+
                 if (dailyDoc.exists()) {
-                    console.log("Data base is there");
                     const data = dailyDoc.data();
                     if (activity === 'Production') {
                         await updateDoc(dailyRef, {
                             production: (data.production || 0) + timeDiff
                         });
                     } else {
-
                         await updateDoc(dailyRef, {
                             break: (data.break || 0) + timeDiff
                         });
                     }
                 } else {
-                    console.log("Data base is not there");
                     await setDoc(dailyRef, {
                         date: formattedDate,
                         production: activity === 'Production' ? timeDiff : 0,
@@ -870,6 +860,7 @@
                 console.error("Error writing document: ", e);
             }
         }
+
 
         function getDetails() {
             const getId = document.getElementById('loggedEmployeeId').innerText;
@@ -1121,96 +1112,7 @@
             document.getElementById('currentDate').innerText = formattedDate;
         }
     </script>
-    <!-- <script>
-        let idleTime = 0;
-        let idleInterval;
-        let idleLimit = 60; // 1 minute
-        let idlePopup = document.getElementById("idlePopup");
-        let lastActivityTime = Date.now();
 
-        // Retrieve stored idle time if available
-        if (localStorage.getItem("idleTime")) {
-            idleTime = parseInt(localStorage.getItem("idleTime"), 10);
-        }
-
-        // Retrieve stored last activity time if available
-        if (localStorage.getItem("lastActivityTime")) {
-            lastActivityTime = parseInt(localStorage.getItem("lastActivityTime"), 10);
-            const currentTime = Date.now();
-            idleTime += Math.floor((currentTime - lastActivityTime) / 1000);
-            lastActivityTime = currentTime;
-        }
-
-        function resetIdleTime() {
-            idleTime = 0;
-            lastActivityTime = Date.now();
-            localStorage.setItem("idleTime", idleTime);
-            localStorage.setItem("lastActivityTime", lastActivityTime);
-            broadcastActivity();
-        }
-
-        function startIdleTimer() {
-            idleInterval = setInterval(timerIncrement, 1000);
-            lastActivityTime = Date.now();
-            localStorage.setItem("lastActivityTime", lastActivityTime);
-        }
-
-        function stopIdleTimer() {
-            clearInterval(idleInterval);
-        }
-
-        function timerIncrement() {
-            const currentTime = Date.now();
-            idleTime = Math.floor((currentTime - lastActivityTime) / 1000);
-            localStorage.setItem("idleTime", idleTime);
-
-            if (idleTime >= idleLimit) {
-                idlePopup.style.display = "block";
-                stopIdleTimer();
-            }
-        }
-
-        function closePopup() {
-            idlePopup.style.display = "none";
-            resetIdleTime();
-            startIdleTimer();
-        }
-
-        function broadcastActivity() {
-            localStorage.setItem("activityEvent", Date.now());
-        }
-
-        // Event listeners to detect user activity
-        document.onmousemove = resetIdleTime;
-        document.onkeypress = resetIdleTime;
-        document.onscroll = resetIdleTime;
-        document.onclick = resetIdleTime;
-
-        // Page Visibility API to handle tab visibility changes
-        document.addEventListener("visibilitychange", function () {
-            if (document.hidden) {
-                stopIdleTimer();
-            } else {
-                startIdleTimer();
-            }
-        });
-
-        // Save the idle time to localStorage before the user leaves the page
-        window.addEventListener("beforeunload", function () {
-            localStorage.setItem("idleTime", idleTime);
-            localStorage.setItem("lastActivityTime", lastActivityTime);
-        });
-
-        // Listen for storage events to synchronize activity across tabs
-        window.addEventListener("storage", function (event) {
-            if (event.key === "activityEvent") {
-                resetIdleTime();
-            }
-        });
-
-        // Start the idle timer when the page loads
-        startIdleTimer();
-    </script> -->
 </body>
 
 </html>
