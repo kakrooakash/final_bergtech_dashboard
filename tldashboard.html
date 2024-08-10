@@ -12,7 +12,12 @@
 </head>
 
 <body>
+
     <div class="container">
+        <div class="status-counters">
+            <span id="productionCounter">Production: 0</span>
+            <span id="breakCounter">Break: 0</span>
+        </div>
         <input type="text" id="datePicker" placeholder="Select Date">
         <button onclick="resetFilters()" class="reset-button">Reset</button>
         <button class="export-button" onclick="exportTableToExcel()">Export to Excel</button>
@@ -127,8 +132,6 @@
 
             // Query for both process and process1
             const q1 = query(collection(db, 'users'), where('process', '==', process));
-
-
             const usersSnapshot1 = await getDocs(q1);
 
             const emailTableBody = document.getElementById('emailTableBody');
@@ -137,12 +140,25 @@
             // Create a set to avoid duplicate users if a user has both process and process1
             const userSet = new Set();
 
+            // Initialize counters
+            let productionCount = 0;
+            let breakCount = 0;
+
             for (const userDoc of usersSnapshot1.docs) {
                 if (!userSet.has(userDoc.id)) {
                     userSet.add(userDoc.id);
-                    await addUserToTable(userDoc);
+                    const result = await addUserToTable(userDoc);
+                    if (result.activity === "Production") {
+                        productionCount++;
+                    } else if (result.activity === "Break") {
+                        breakCount++;
+                    }
                 }
             }
+
+            // Update counters
+            document.getElementById('productionCounter').textContent = `Production: ${productionCount}`;
+            document.getElementById('breakCounter').textContent = `Break: ${breakCount}`;
         }
 
         async function addUserToTable(userDoc) {
@@ -154,18 +170,15 @@
             const email = userDoc.data().email;
             const userId = userDoc.id;
 
-            // Reference to the specific document for the selected date
             const dailyDataDocRef = doc(db, "EmployeeActivity", userId, "dailyData", selectedDate);
             const dailyDataDoc = await getDoc(dailyDataDocRef);
 
             let productionTotal = 0;
             let breakTotal = 0;
 
-            // Fetch data from the "activity" sub-collection for the selected date
             const colRef = collection(db, "EmployeeActivity", userId, "activity");
             const querySnapshot = await getDocs(colRef);
 
-            // Iterate through each document in the "activity" sub-collection
             querySnapshot.forEach((doc) => {
                 const activityData = doc.data();
                 const activity = activityData.activity;
@@ -185,13 +198,10 @@
             const productivity = secondsToHMS(productionTotal);
             const breakHours = secondsToHMS(breakTotal);
 
-            console.log(productivity);
-            console.log(breakHours);
-
             const loginTime = dailyDataDoc.exists() && dailyDataDoc.data().loginTime ? dailyDataDoc.data().loginTime : null;
             const activity = dailyDataDoc.exists() ? dailyDataDoc.data().currentActivity : null;
             const signoutTime = dailyDataDoc.exists() ? dailyDataDoc.data().signOutTime : 'N/A';
-            
+
             if (loginTime || activity) {
                 const row = document.createElement('tr');
                 row.id = `row-${userId}`;
@@ -257,7 +267,11 @@
                     document.getElementById(`productivity-${userId}`).textContent = secondsToHMS(realTimeProductionTotal);
                     document.getElementById(`break-${userId}`).textContent = secondsToHMS(realTimeBreakTotal);
                 });
+
+                return { activity };
             }
+
+            return { activity: null };
         }
 
         function getSelectedProcess() {

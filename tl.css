@@ -126,3 +126,21 @@ tr:hover {
 .load-more-button:hover, .filter-button:hover, .reset-button:hover {
     background-color: #0056b3;
 }
+
+.status-counters {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.status-counters span {
+    font-weight: bold;
+    font-size: 16px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+#breakCounter{
+    margin-left: 10px;
+}
